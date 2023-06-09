@@ -1,0 +1,22 @@
+[package]
+name = "ws2812-flexspi"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[dev-dependencies]
+
+# Base dependencies
+cortex-m = "0.7.7"
+embedded-hal = "0.2.7"
+teensy4-panic = "0.2.2"
+
+# Board support package
+teensy4-bsp = { version = "0.4.2", features = ["rt"] }
+
+# Packages necessary for board usage
+nb = "1.1.0"    # Async
+fugit = "0.3.6" # Time
