@@ -112,12 +112,12 @@ where
         match N {
             1 => ral::modify_reg!(ral::ccm, ccm,
                 CSCMR1,
-                FLEXSPI_CLK_SEL: FLEXSPI_CLK_SEL_0,
+                FLEXSPI_CLK_SEL: FLEXSPI_CLK_SEL_2,
                 FLEXSPI_PODF: FLEXSPI_PODF_7
             ),
             2 => ral::modify_reg!(ral::ccm, ccm,
                 CBCMR,
-                FLEXSPI2_CLK_SEL: FLEXSPI2_CLK_SEL_3,
+                FLEXSPI2_CLK_SEL: FLEXSPI2_CLK_SEL_0,
                 FLEXSPI2_PODF: FLEXSPI2_PODF_7
             ),
             _ => unreachable!(),

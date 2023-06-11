@@ -5,12 +5,13 @@ A neopixel driver based on NXP i.MX RT's FlexSPI bus.
 
 # Examples
 
-*- intended for the [Teensy 4.0](https://www.pjrc.com/store/teensy40.html) board -*
+*- examples are intended for the [Teensy MicroMod](https://www.sparkfun.com/products/16402) module -*
 
 ## Prerequisites
 
 The following hardware is required for the examples:
-- A [Teensy 4.0](https://www.pjrc.com/store/teensy40.html) development board
+- A [Teensy MicroMod](https://www.sparkfun.com/products/16402) module
+- A MicroMod carrier board, like the [SparkFun ATP Carrier Board](https://www.sparkfun.com/products/16885)
 - A way to read the Teensy's UART, like a USB-UART-converter
 
 The following software tools have to be installed:

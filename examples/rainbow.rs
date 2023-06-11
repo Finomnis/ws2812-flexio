@@ -27,7 +27,7 @@ fn main() -> ! {
         mut ccm,
         flexspi2,
         ..
-    } = board::t40(board::instances());
+    } = board::tmm(board::instances());
 
     // Initialize LED
     let led = board::led(&mut gpio2, pins.p13);

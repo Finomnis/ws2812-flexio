@@ -19,7 +19,7 @@ def main():
         hexfile = tmpdir / "firmware.hex"
 
         subprocess.run(["llvm-objcopy", "-O", "ihex", binary, hexfile], check=True)
-        subprocess.run(["teensy_loader_cli", "--mcu=TEENSY40", "-wsv", hexfile], check=True)
+        subprocess.run(["teensy_loader_cli", "--mcu=TEENSY_MICROMOD", "-wsv", hexfile], check=True)
 
     print("Teensy successfully flashed. Read its log output from the UART pin 1.")
 
