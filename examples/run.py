@@ -21,7 +21,7 @@ def main():
         subprocess.run(["llvm-objcopy", "-O", "ihex", binary, hexfile], check=True)
         subprocess.run(["teensy_loader_cli", "--mcu=TEENSY40", "-wsv", hexfile], check=True)
 
-    print("Teensy40 successfully flashed. Read the results of the benchmark from its UART2.")
+    print("Teensy successfully flashed. Read its log output from the UART pin 1.")
 
 
 if __name__ == "__main__":

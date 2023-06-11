@@ -125,8 +125,11 @@ where
 
         let mut this = Self { flexspi };
 
+        // Enable and wait for reset finished
+        ral::modify_reg!(ral::flexspi, this.flexspi, MCR0, MDIS: 0);
         while ral::read_reg!(ral::flexspi, this.flexspi, MCR0, SWRESET == 1) {}
 
+        // Configure
         this.disabled(|disabled| {
             ral::modify_reg!(
                 ral::flexspi,
@@ -173,10 +176,14 @@ where
 
         // TODO: LUTs
 
-        ral::modify_reg!(ral::flexspi, this.flexspi, MCR0, SWRESET: 1);
-        while ral::read_reg!(ral::flexspi, this.flexspi, MCR0, SWRESET == 1) {}
+        this.soft_reset();
 
         this
+    }
+
+    fn soft_reset(&mut self) {
+        ral::modify_reg!(ral::flexspi, self.flexspi, MCR0, SWRESET: 1);
+        while ral::read_reg!(ral::flexspi, self.flexspi, MCR0, SWRESET == 1) {}
     }
 
     /// Temporarily disable the FlexSPI peripheral.
