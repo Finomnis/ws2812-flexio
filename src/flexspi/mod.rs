@@ -174,8 +174,17 @@ where
             )
         });
 
-        // TODO: LUTs
+        // Write LUTs
+        for i in 0..this.flexspi.LUT.len() {
+            ral::write_reg!(ral::flexspi, this.flexspi, LUT[i], 0);
+        }
+        ral::modify_reg!(
+            ral::flexspi, this.flexspi, LUT[0],
+            OPCODE0: 0x01, NUM_PADS0: 0x1, OPERAND0: 0x27,
+            OPCODE1: 0x00, NUM_PADS1: 0x0, OPERAND1: 0x00
+        );
 
+        // Soft Reset to properly apply settings
         this.soft_reset();
 
         this
@@ -184,6 +193,78 @@ where
     fn soft_reset(&mut self) {
         ral::modify_reg!(ral::flexspi, self.flexspi, MCR0, SWRESET: 1);
         while ral::read_reg!(ral::flexspi, self.flexspi, MCR0, SWRESET == 1) {}
+    }
+
+    /// A dummy function for development purposes
+    pub fn dummy_write(&mut self) {
+        /*
+            From reference manual:
+
+            1. Fill IP TX FIFO with programming data if this is a programing command (for
+            instance, programming flash data and flash status registers.)
+            2. Set flash access start address (IPCR0[SFAR]).
+            3. Write the IPCR1 with the read/program data size, sequence index, and sequence
+            number (IPCR1[IDATSZ, ISEQID, and ISEQNUM]).
+            4. Trigger flash access command by writing 1 to IPCMD[TRG].
+            5. Wait for the INTR[IPCMDDONE] bit to set or for the IP command done interrupt to
+            fire indicating the command has completed on the FlexSPI interface.
+        */
+
+        let lut_seq_range = 0u32..=0;
+
+        // Setup parameters
+        ral::write_reg!(
+            ral::flexspi, self.flexspi, IPCR0,
+            SFAR: 0
+        );
+        ral::write_reg!(
+            ral::flexspi, self.flexspi, IPCR1,
+            IPAREN: 0,
+            ISEQID: lut_seq_range.start(),
+            ISEQNUM: (lut_seq_range.count() as u32) - 1,
+            IDATSZ: 0
+        );
+
+        // Reset interrupt flags
+        ral::modify_reg!(
+            ral::flexspi, self.flexspi, INTR,
+            IPCMDDONE: 0,
+            IPCMDERR: 0,
+            IPCMDGE: 0
+        );
+
+        // Start!
+        ral::write_reg!(
+            ral::flexspi, self.flexspi, IPCMD,
+            TRG: 1
+        );
+
+        // Wait for done
+        while ral::read_reg!(ral::flexspi, self.flexspi, INTR, IPCMDDONE == 0) {}
+
+        // Error handling
+        let err = if ral::read_reg!(ral::flexspi, self.flexspi, INTR, IPCMDERR == 1) {
+            Some(ral::read_reg!(
+                ral::flexspi,
+                self.flexspi,
+                STS1,
+                IPCMDERRCODE
+            ))
+        } else {
+            None
+        };
+
+        // Reset interrupt flags
+        ral::modify_reg!(
+            ral::flexspi, self.flexspi, INTR,
+            IPCMDDONE: 0,
+            IPCMDERR: 0,
+            IPCMDGE: 0
+        );
+
+        if let Some(errcode) = err {
+            log::error!("FlexSPI write failed! Error code: {}", errcode);
+        }
     }
 
     /// Temporarily disable the FlexSPI peripheral.

@@ -54,13 +54,17 @@ fn main() -> ! {
     us_timer.set_mode(hal::gpt::Mode::FreeRunning);
     us_timer.enable();
     let time_us = move || us_timer.count();
-    log::info!("Timer initialized.");
+    log::debug!("Timer initialized.");
 
     // FlexSPI driver
     use ws2812_flexspi::flexspi::FlexSPI;
     log::info!("Initializing FlexSPI ...");
-    let _flexspi2 = FlexSPI::init(&mut ccm, flexspi2);
-    log::info!("FlexSPI initialized.");
+    let mut flexspi2 = FlexSPI::init(&mut ccm, flexspi2);
+    log::debug!("FlexSPI initialized.");
+
+    log::info!("Performing dummy write ...");
+    flexspi2.dummy_write();
+    log::debug!("Write done.");
 
     // Blink with a cycle length of 2 seconds, to make it verifyable that
     // our timer runs at the correct speed.
