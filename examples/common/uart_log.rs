@@ -52,10 +52,17 @@ impl Log for UartLogger {
     fn log(&self, record: &log::Record) {
         critical_section::with(|cs| {
             let mut uart = self.uart.borrow(cs).borrow_mut();
+            let color = match record.level() {
+                log::Level::Error => "31",
+                log::Level::Warn => "33",
+                log::Level::Info => "39",
+                log::Level::Debug => "38;5;243",
+                log::Level::Trace => "38;5;19",
+            };
             writeln!(
                 uart,
-                "{}:{} -- {}",
-                record.level(),
+                "\x1b[{}m[{}] {}\x1b[0m",
+                color,
                 record.target(),
                 record.args()
             );
