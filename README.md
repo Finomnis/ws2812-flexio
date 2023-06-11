@@ -24,5 +24,5 @@ The following software tools have to be installed:
 ## Run
 
 - Connect the Teensy to PC via USB cable.
-- Run `cargo run --release`.
+- Run `cargo run --release --example rainbow`.
 - Read the output of the examples on the Teensy's UART.
