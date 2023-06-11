@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 imxrt-hal = "0.5.2"
 imxrt-ral = "0.5.0"
+log = "0.4.19"
 
 [dev-dependencies]
 
@@ -18,6 +19,9 @@ teensy4-panic = "0.2.2"
 
 # Board support package
 teensy4-bsp = { version = "0.4.2", features = ["rt"] }
+
+# Logging
+critical-section = "1.1.1"
 
 # Packages necessary for board usage
 nb = "1.1.0"    # Async

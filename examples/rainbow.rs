@@ -15,7 +15,7 @@ use bsp::board;
 use bsp::hal;
 
 mod common;
-use common::UartWriter;
+use common::{uart_log, UartWriter};
 
 #[bsp::rt::entry]
 fn main() -> ! {
@@ -41,23 +41,26 @@ fn main() -> ! {
     writeln!(uart, "===== WS2812 Rainbow Example =====");
     writeln!(uart);
 
+    // Initialize logging
+    uart_log::init(uart, log::LevelFilter::Debug);
+
     // Initialize timer
     // Is a 32-bit timer with us precision.
     // Overflows every 71.58 minutes, which is sufficient for our example.
-    write!(uart, "Initializing timer ... ");
+    log::info!("Initializing timer ...");
     assert_eq!(board::PERCLK_FREQUENCY, 1_000_000);
     us_timer.set_clock_source(hal::gpt::ClockSource::PeripheralClock);
     us_timer.set_divider(1);
     us_timer.set_mode(hal::gpt::Mode::FreeRunning);
     us_timer.enable();
     let time_us = move || us_timer.count();
-    writeln!(uart, "done");
+    log::info!("Timer initialized.");
 
     // FlexSPI driver
     use ws2812_flexspi::flexspi::FlexSPI;
-    write!(uart, "Initializing FlexSPI ... ");
+    log::info!("Initializing FlexSPI ...");
     let _flexspi2 = FlexSPI::init(&mut ccm, flexspi2);
-    writeln!(uart, "done");
+    log::info!("FlexSPI initialized.");
 
     // Blink with a cycle length of 2 seconds, to make it verifyable that
     // our timer runs at the correct speed.
