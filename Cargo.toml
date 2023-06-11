@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+imxrt-hal = "0.5.2"
+imxrt-ral = "0.5.0"
 
 [dev-dependencies]
 
@@ -20,3 +22,9 @@ teensy4-bsp = { version = "0.4.2", features = ["rt"] }
 # Packages necessary for board usage
 nb = "1.1.0"    # Async
 fugit = "0.3.6" # Time
+
+
+# For local development of imxrt-hal
+[patch.crates-io]
+imxrt-hal = { path = "../imxrt-hal" }
+teensy4-bsp = { path = "../teensy4-rs" }
