@@ -56,26 +56,15 @@ fn main() -> ! {
     let time_us = move || us_timer.count();
     log::debug!("Timer initialized.");
 
-    // FlexIO driver
-    /*
-        use ws2812_flexio::flexio::FlexIO;
-        log::info!("Initializing FlexSPI ...");
-        let mut flexspi2 = FlexSPI::init(
-            &mut ccm,
-            flexspi2,
-            flexspi::Pins {
-                data0: pins.p17,
-                data1: pins.p16,
-                sclk: pins.p10,
-                ss0b: pins.p13,
-            },
-        );
-        log::debug!("FlexSPI initialized.");
+    // Ws2812 driver
+    log::info!("Initializing FlexIO ...");
+    let mut neopixel =
+        ws2812_flexio::flexio::Ws2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7));
+    log::debug!("FlexIO initialized.");
 
-        log::info!("Performing dummy write ...");
-        flexspi2.dummy_write();
-        log::debug!("Write done.");
-    */
+    log::info!("Performing dummy write ...");
+    neopixel.dummy_write();
+    log::debug!("Write done.");
 
     // Blink with a cycle length of 2 seconds, to make it verifyable that
     // our timer runs at the correct speed.
