@@ -16,7 +16,6 @@ use bsp::hal;
 
 mod common;
 use common::{uart_log, UartWriter};
-use ws2812_flexspi::flexspi;
 
 #[bsp::rt::entry]
 fn main() -> ! {
@@ -26,7 +25,7 @@ fn main() -> ! {
         lpuart6,
         gpt1: mut us_timer,
         mut ccm,
-        flexspi2,
+        flexio2,
         ..
     } = board::t40(board::instances());
 
@@ -57,25 +56,26 @@ fn main() -> ! {
     let time_us = move || us_timer.count();
     log::debug!("Timer initialized.");
 
-    // FlexSPI driver
+    // FlexIO driver
+    /*
+        use ws2812_flexio::flexio::FlexIO;
+        log::info!("Initializing FlexSPI ...");
+        let mut flexspi2 = FlexSPI::init(
+            &mut ccm,
+            flexspi2,
+            flexspi::Pins {
+                data0: pins.p17,
+                data1: pins.p16,
+                sclk: pins.p10,
+                ss0b: pins.p13,
+            },
+        );
+        log::debug!("FlexSPI initialized.");
 
-    use ws2812_flexspi::flexspi::FlexSPI;
-    log::info!("Initializing FlexSPI ...");
-    let mut flexspi2 = FlexSPI::init(
-        &mut ccm,
-        flexspi2,
-        flexspi::Pins {
-            data0: pins.p17,
-            data1: pins.p16,
-            sclk: pins.p10,
-            ss0b: pins.p13,
-        },
-    );
-    log::debug!("FlexSPI initialized.");
-
-    log::info!("Performing dummy write ...");
-    flexspi2.dummy_write();
-    log::debug!("Write done.");
+        log::info!("Performing dummy write ...");
+        flexspi2.dummy_write();
+        log::debug!("Write done.");
+    */
 
     // Blink with a cycle length of 2 seconds, to make it verifyable that
     // our timer runs at the correct speed.
