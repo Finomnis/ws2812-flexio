@@ -82,7 +82,7 @@ fn main() -> ! {
     loop {
         let time_s = time_us() / 1_000_000;
         if time_s % 2 == 0 {
-            led.clear();
+            led.set();
         } else {
             led.clear();
         }

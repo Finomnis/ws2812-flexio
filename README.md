@@ -1,5 +1,5 @@
-# ws2812-flexspi
-A neopixel driver based on NXP i.MX RT's FlexSPI bus.
+# ws2812-flexio
+A neopixel driver based on NXP i.MX RT's FlexIO bus.
 
 
 
@@ -15,8 +15,8 @@ The following hardware is required for the examples:
 
 The following software tools have to be installed:
 - Python3 (as `python3`, or modify `run.py` to use the `python` binary)
-- [`llvm-objcopy`](https://github.com/rust-lang/rust/issues/85658)
-  - Install via `rustup component add llvm-tools-preview`
+- `llvm-objcopy`
+  - Install [`LLVM`](https://github.com/llvm/llvm-project/releases) tool suite
 - [`teensy-loader-cli`](https://www.pjrc.com/teensy/loader_cli.html)
 
 
