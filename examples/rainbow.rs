@@ -15,7 +15,7 @@ use bsp::board;
 use bsp::hal;
 
 mod common;
-use common::UartWriter;
+use common::{uart_log, UartWriter};
 
 #[bsp::rt::entry]
 fn main() -> ! {
@@ -24,6 +24,8 @@ fn main() -> ! {
         pins,
         lpuart6,
         gpt1: mut us_timer,
+        mut ccm,
+        flexio2,
         ..
     } = board::t40(board::instances());
 
@@ -35,19 +37,34 @@ fn main() -> ! {
     let mut uart = UartWriter::new(board::lpuart(lpuart6, pins.p1, pins.p0, 115200));
     writeln!(uart);
 
+    // Write welcome message
+    writeln!(uart, "===== WS2812 Rainbow Example =====");
+    writeln!(uart);
+
+    // Initialize logging
+    uart_log::init(uart, log::LevelFilter::Debug);
+
     // Initialize timer
     // Is a 32-bit timer with us precision.
     // Overflows every 71.58 minutes, which is sufficient for our example.
+    log::info!("Initializing timer ...");
     assert_eq!(board::PERCLK_FREQUENCY, 1_000_000);
     us_timer.set_clock_source(hal::gpt::ClockSource::PeripheralClock);
     us_timer.set_divider(1);
     us_timer.set_mode(hal::gpt::Mode::FreeRunning);
     us_timer.enable();
     let time_us = move || us_timer.count();
+    log::debug!("Timer initialized.");
 
-    // Write welcome message
-    writeln!(uart, "===== WS2812 Rainbow Example =====");
-    writeln!(uart);
+    // Ws2812 driver
+    log::info!("Initializing FlexIO ...");
+    let mut neopixel =
+        ws2812_flexio::flexio::Ws2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7));
+    log::debug!("FlexIO initialized.");
+
+    log::info!("Performing dummy write ...");
+    neopixel.dummy_write();
+    log::debug!("Write done.");
 
     // Blink with a cycle length of 2 seconds, to make it verifyable that
     // our timer runs at the correct speed.
