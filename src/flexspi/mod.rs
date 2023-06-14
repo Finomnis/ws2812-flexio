@@ -1,6 +1,19 @@
+use imxrt_hal as hal;
 use imxrt_ral as ral;
 
 use ral::{flexspi, Valid};
+
+/// Pins for the FlexSPI driver
+pub struct Pins<Data0, Data1, Sclk, Ss0b> {
+    /// Data0
+    pub data0: Data0,
+    /// Data1
+    pub data1: Data1,
+    /// Sclk
+    pub sclk: Sclk,
+    /// Ss0b
+    pub ss0b: Ss0b,
+}
 
 /// An FlexSPI peripheral which is temporarily disabled.
 pub struct Disabled<'a, const N: u8> {
@@ -107,7 +120,29 @@ where
     flexspi::Instance<N>: Valid,
 {
     /// Initializes the FlexSPI driver
-    pub fn init(ccm: &mut ral::ccm::CCM, flexspi: flexspi::Instance<N>) -> Self {
+    pub fn init<Data0, Data1, Sclk, Ss0b>(
+        ccm: &mut ral::ccm::CCM,
+        flexspi: flexspi::Instance<N>,
+        pins: Pins<Data0, Data1, Sclk, Ss0b>,
+    ) -> Self
+    where
+        Data0: hal::iomuxc::flexspi::Pin<
+            Module = hal::iomuxc::consts::Const<N>,
+            Signal = hal::iomuxc::flexspi::Data0,
+        >,
+        Data1: hal::iomuxc::flexspi::Pin<
+            Module = hal::iomuxc::consts::Const<N>,
+            Signal = hal::iomuxc::flexspi::Data1,
+        >,
+        Sclk: hal::iomuxc::flexspi::Pin<
+            Module = hal::iomuxc::consts::Const<N>,
+            Signal = hal::iomuxc::flexspi::Sclk,
+        >,
+        Ss0b: hal::iomuxc::flexspi::Pin<
+            Module = hal::iomuxc::consts::Const<N>,
+            Signal = hal::iomuxc::flexspi::Ss0b,
+        >,
+    {
         // Setup clock
         match N {
             1 => ral::modify_reg!(ral::ccm, ccm,

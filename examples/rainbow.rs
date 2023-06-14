@@ -16,12 +16,13 @@ use bsp::hal;
 
 mod common;
 use common::{uart_log, UartWriter};
+use ws2812_flexspi::flexspi;
 
 #[bsp::rt::entry]
 fn main() -> ! {
     let board::Resources {
         mut gpio2,
-        pins,
+        mut pins,
         lpuart6,
         gpt1: mut us_timer,
         mut ccm,
@@ -57,9 +58,19 @@ fn main() -> ! {
     log::debug!("Timer initialized.");
 
     // FlexSPI driver
+
     use ws2812_flexspi::flexspi::FlexSPI;
     log::info!("Initializing FlexSPI ...");
-    let mut flexspi2 = FlexSPI::init(&mut ccm, flexspi2);
+    let mut flexspi2 = FlexSPI::init(
+        &mut ccm,
+        flexspi2,
+        flexspi::Pins {
+            data0: pins.p17,
+            data1: pins.p16,
+            sclk: pins.p10,
+            ss0b: pins.p13,
+        },
+    );
     log::debug!("FlexSPI initialized.");
 
     log::info!("Performing dummy write ...");
