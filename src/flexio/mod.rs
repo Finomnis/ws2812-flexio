@@ -1,34 +1,14 @@
 use imxrt_hal as hal;
 use imxrt_ral as ral;
 
-use hal::iomuxc::{self, flexio::Pin};
-
+use hal::ccm::clock_gate;
 use ral::{flexio, Valid};
 
-/// The pins to use for WS2812.
-pub trait Pins<const N: u8, const P: u8> {
-    /// Configures the pins.
-    ///
-    /// This is not intended to be called by the user;
-    /// it will be used inside of the driver.
-    fn configure(&mut self);
-}
-
-impl<const N: u8, P: Pin<N>> Pins<N, 1> for P {
-    fn configure(&mut self) {
-        iomuxc::flexio::prepare(self);
-    }
-}
-
-impl<const N: u8, P1: Pin<N>, P2: Pin<N>> Pins<N, 2> for (P1, P2) {
-    fn configure(&mut self) {
-        iomuxc::flexio::prepare(&mut self.0);
-        iomuxc::flexio::prepare(&mut self.1);
-    }
-}
+mod pins;
+pub use pins::Pins;
 
 /// A WS2812 Neopixel LED Strip driver based on the i.MX RT FlexIO module
-pub struct Ws2812Driver<const N: u8, const P: u8, PINS: Pins<N, P>>
+pub struct Ws2812Driver<const N: u8, PINS: Pins<N>>
 where
     flexio::Instance<N>: Valid,
 {
@@ -36,13 +16,35 @@ where
     _pins: PINS,
 }
 
-impl<const N: u8, const P: u8, PINS: Pins<N, P>> Ws2812Driver<N, P, PINS>
+impl<const N: u8, PINS: Pins<N>> Ws2812Driver<N, PINS>
 where
     flexio::Instance<N>: Valid,
 {
     /// Initializes the FlexIO driver
     pub fn init(ccm: &mut ral::ccm::CCM, flexio: flexio::Instance<N>, mut pins: PINS) -> Self {
+        // Configure clocks
+        clock_gate::flexio::<N>().set(ccm, clock_gate::ON);
+
+        // Configure pins
         pins.configure();
+
+        // Debug infos
+        if log::log_enabled!(log::Level::Debug) {
+            let (major, minor, feature) =
+                ral::read_reg!(ral::flexio, flexio, VERID, MAJOR, MINOR, FEATURE);
+            let (trigger, pin, timer, shifter) =
+                ral::read_reg!(ral::flexio, flexio, PARAM, TRIGGER, PIN, TIMER, SHIFTER);
+
+            log::debug!("Initializing FlexIO #{}.", N);
+            log::debug!("    Version: {}.{}", major, minor);
+            log::debug!("    Feature Set: {}", feature);
+            log::debug!("    Peripherals:");
+            log::debug!("        {} triggers", trigger);
+            log::debug!("        {} pins", pin);
+            log::debug!("        {} timers", timer);
+            log::debug!("        {} shifters", shifter);
+        }
+
         Self {
             flexio,
             _pins: pins,
@@ -52,3 +54,6 @@ where
     /// A dummy function for development purposes
     pub fn dummy_write(&mut self) {}
 }
+
+// TODO: Add PreparedPixels struct that contains prepared pixels.
+// TODO: Add Iterator<Item = (Pixel, Pixel)> based pixel-setter function.

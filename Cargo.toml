@@ -9,6 +9,7 @@ edition = "2021"
 imxrt-hal = "0.5.2"
 imxrt-ral = "0.5.0"
 log = "0.4.19"
+paste = "1.0.12"
 
 [dev-dependencies]
 
@@ -30,6 +31,6 @@ fugit = "0.3.6" # Time
 
 # For local development of imxrt-hal
 [patch.crates-io]
-#imxrt-hal = { path = "../imxrt-hal" }
+imxrt-hal = { git = "https://github.com/Finomnis/imxrt-hal.git", branch = "flexio" }
 imxrt-iomuxc = { git = "https://github.com/Finomnis/imxrt-iomuxc.git", branch = "flexio_0.2.1" }
 teensy4-bsp = { git = "https://github.com/Finomnis/teensy4-rs.git", branch = "flexio" }

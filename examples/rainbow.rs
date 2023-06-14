@@ -21,7 +21,7 @@ use common::{uart_log, UartWriter};
 fn main() -> ! {
     let board::Resources {
         mut gpio2,
-        mut pins,
+        pins,
         lpuart6,
         gpt1: mut us_timer,
         mut ccm,
