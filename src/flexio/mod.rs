@@ -4,7 +4,10 @@ use imxrt_ral as ral;
 use hal::ccm::clock_gate;
 use ral::{flexio, Valid};
 
+/// Errors the driver can cause
+pub mod errors;
 mod pins;
+
 pub use pins::Pins;
 
 /// A WS2812 Neopixel LED Strip driver based on the i.MX RT FlexIO module
@@ -21,34 +24,42 @@ where
     flexio::Instance<N>: Valid,
 {
     /// Initializes the FlexIO driver
-    pub fn init(ccm: &mut ral::ccm::CCM, flexio: flexio::Instance<N>, mut pins: PINS) -> Self {
+    pub fn init(
+        ccm: &mut ral::ccm::CCM,
+        flexio: flexio::Instance<N>,
+        mut pins: PINS,
+    ) -> Result<Self, errors::WS2812InitError> {
         // Configure clocks
         clock_gate::flexio::<N>().set(ccm, clock_gate::ON);
+
+        // Parameter check
+        let (version_major, version_minor, available_feature_set) =
+            ral::read_reg!(ral::flexio, flexio, VERID, MAJOR, MINOR, FEATURE);
+        let (available_triggers, available_pins, available_timers, available_shifters) =
+            ral::read_reg!(ral::flexio, flexio, PARAM, TRIGGER, PIN, TIMER, SHIFTER);
+
+        if available_pins < PINS::PIN_COUNT {
+            return Err(errors::WS2812InitError::NotEnoughPins);
+        }
+        // TODO check timers, shifters and triggers count
+
+        // Debug infos
+        log::debug!("Initializing FlexIO #{}.", N);
+        log::debug!("    Version: {}.{}", version_major, version_minor);
+        log::debug!("    Feature Set: {}", available_feature_set);
+        log::debug!("    Peripherals:");
+        log::debug!("        {} triggers", available_triggers);
+        log::debug!("        {} pins", available_pins);
+        log::debug!("        {} timers", available_timers);
+        log::debug!("        {} shifters", available_shifters);
 
         // Configure pins
         pins.configure();
 
-        // Debug infos
-        if log::log_enabled!(log::Level::Debug) {
-            let (major, minor, feature) =
-                ral::read_reg!(ral::flexio, flexio, VERID, MAJOR, MINOR, FEATURE);
-            let (trigger, pin, timer, shifter) =
-                ral::read_reg!(ral::flexio, flexio, PARAM, TRIGGER, PIN, TIMER, SHIFTER);
-
-            log::debug!("Initializing FlexIO #{}.", N);
-            log::debug!("    Version: {}.{}", major, minor);
-            log::debug!("    Feature Set: {}", feature);
-            log::debug!("    Peripherals:");
-            log::debug!("        {} triggers", trigger);
-            log::debug!("        {} pins", pin);
-            log::debug!("        {} timers", timer);
-            log::debug!("        {} shifters", shifter);
-        }
-
-        Self {
+        Ok(Self {
             flexio,
             _pins: pins,
-        }
+        })
     }
 
     /// A dummy function for development purposes

@@ -58,7 +58,7 @@ fn main() -> ! {
     // Ws2812 driver
     log::info!("Initializing FlexIO ...");
     let mut neopixel =
-        ws2812_flexio::flexio::Ws2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7));
+        ws2812_flexio::flexio::Ws2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7)).unwrap();
     log::debug!("FlexIO initialized.");
 
     log::info!("Performing dummy write ...");
