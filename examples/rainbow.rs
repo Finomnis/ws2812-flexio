@@ -9,7 +9,6 @@
 #![no_main]
 
 use teensy4_bsp as bsp;
-use teensy4_panic as _;
 
 use bsp::board;
 use bsp::hal;
