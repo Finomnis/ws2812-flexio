@@ -14,6 +14,9 @@ pub trait Pins<const N: u8> {
     /// This is not intended to be called by the user;
     /// it will be used inside of the driver.
     fn configure(&mut self);
+
+    /// The FlexIO pin offsets
+    const FLEXIO_PIN_OFFSETS: &'static [u8];
 }
 
 macro_rules! count {
@@ -32,6 +35,10 @@ macro_rules! impl_pins {
                 }
 
                 const PIN_COUNT: u32 = count!($($n)+);
+
+                const FLEXIO_PIN_OFFSETS: &'static[u8] = &[$(
+                    [<P $n>]::OFFSET
+                ),+];
             }
         }
     };

@@ -52,6 +52,7 @@ where
         log::debug!("        {} pins", available_pins);
         log::debug!("        {} timers", available_timers);
         log::debug!("        {} shifters", available_shifters);
+        log::debug!("Pin Offsets: {:?}", PINS::FLEXIO_PIN_OFFSETS);
 
         // Configure pins
         pins.configure();
