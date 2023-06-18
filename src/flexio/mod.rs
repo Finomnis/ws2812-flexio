@@ -19,6 +19,8 @@ where
     _pins: PINS,
 }
 
+const CLOCK_DIVIDER: u8 = 75; // 60 MHz / 75 = 800 KHz
+
 impl<const N: u8, PINS: Pins<N>> Ws2812Driver<N, PINS>
 where
     flexio::Instance<N>: Valid,
@@ -93,7 +95,12 @@ where
         // }
 
         // Timer0
-        ral::write_reg!(ral::flexio, flexio, TIMCMP[0], ((32 * 2 - 1) << 8) | 74);
+        ral::write_reg!(
+            ral::flexio,
+            flexio,
+            TIMCMP[0],
+            ((32 * 2 - 1) << 8) | (u32::from(CLOCK_DIVIDER) - 1)
+        );
         ral::write_reg!(ral::flexio, flexio, TIMCTL[0],
             TRGSEL: 0b0001, // Use shifter 0 flag as trigger
             TRGPOL: 1, // Trigger whan shifter0 got filled
@@ -113,16 +120,8 @@ where
             TSTART: 0b00, // No start bit
         );
 
-        let pin_mask = PINS::FLEXIO_PIN_OFFSETS
-            .into_iter()
-            .map(|v| 1 << v)
-            .fold(0, |a, b| a | b);
-        log::debug!("Mask: {:#010x}", pin_mask);
-
         // Enable
         ral::write_reg!(ral::flexio, flexio, CTRL, FLEXEN: 1);
-        let reg = ral::read_reg!(ral::flexio, flexio, CTRL);
-        log::debug!("Ctrl: {:#010x}", reg);
 
         Ok(Self {
             flexio,
@@ -132,6 +131,12 @@ where
 
     /// A dummy function for development purposes
     pub fn dummy_write(&mut self) {
+        ral::write_reg!(ral::flexio, self.flexio, SHIFTBUF[0], 0x555500ff);
+
+        while ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) == 0 {}
+        ral::write_reg!(ral::flexio, self.flexio, SHIFTBUF[0], 0x555500ff);
+
+        while ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) == 0 {}
         ral::write_reg!(ral::flexio, self.flexio, SHIFTBUF[0], 0x555500ff);
     }
 }
