@@ -12,6 +12,7 @@ use teensy4_bsp as bsp;
 
 use bsp::board;
 use bsp::hal;
+use bsp::ral;
 
 mod common;
 use common::{uart_log, UartWriter};
@@ -57,12 +58,23 @@ fn main() -> ! {
 
     // Ws2812 driver
     log::info!("Initializing FlexIO ...");
-    let mut neopixel =
-        ws2812_flexio::flexio::Ws2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7)).unwrap();
+    // Set FlexIO clock to 16Mhz, as required by the driver
+    ral::modify_reg!(ral::ccm, ccm, CS1CDR,
+        FLEXIO1_CLK_PRED: FLEXIO1_CLK_PRED_4,
+        FLEXIO1_CLK_PODF: DIVIDE_6,
+    );
+    let mut neopixel = ws2812_flexio::flexio::Ws2812Driver::init(
+        &mut ccm,
+        flexio2,
+        (pins.p6, pins.p7, pins.p8, pins.p9),
+    )
+    .unwrap();
     log::debug!("FlexIO initialized.");
 
     log::info!("Performing dummy write ...");
-    neopixel.dummy_write();
+    loop {
+        neopixel.dummy_write();
+    }
     log::debug!("Write done.");
 
     // Blink with a cycle length of 2 seconds, to make it verifyable that
