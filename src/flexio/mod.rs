@@ -24,9 +24,13 @@ const CLOCK_DIVIDER: u8 = 10; // Timer toggles; meaning we need two cycles for o
 const LOW_BIT_CYCLES_ON: u8 = 5;
 const HIGH_BIT_CYCLES_ON: u8 = 15;
 
+// Newest WS2812 Version requires 300us latch time
+const LATCH_DELAY_PIXELS: u16 = 240;
+
 const CYCLE_LENGTH: u8 = CLOCK_DIVIDER * 2;
 const LOW_BIT_CYCLES_OFF: u8 = CYCLE_LENGTH - LOW_BIT_CYCLES_ON;
 const HIGH_BIT_CYCLES_OFF: u8 = CYCLE_LENGTH - HIGH_BIT_CYCLES_ON;
+const LATCH_DELAY: u16 = CYCLE_LENGTH as u16 * LATCH_DELAY_PIXELS;
 
 struct DriverBuilder<const N: u8, PINS: Pins<N>>
 where
@@ -162,6 +166,38 @@ where
             TSTART: TSTART_0, // No start bit
         );
     }
+
+    pub fn configure_idle_timer(
+        &mut self,
+        timer_id: u8,
+        shift_timer_pin: u8,
+        output_pin: Option<u8>,
+    ) {
+        ral::write_reg!(
+            ral::flexio,
+            self.flexio,
+            TIMCMP[usize::from(timer_id)],
+            u32::from(LATCH_DELAY)
+        );
+        ral::write_reg!(ral::flexio, self.flexio, TIMCTL[usize::from(timer_id)],
+            TRGSEL: u32::from(shift_timer_pin) * 2, // Use shift output as trigger
+            TRGPOL: TRGPOL_0, // Trigger when shift output gets high
+            TRGSRC: TRGSRC_1, // Internal trigger
+            PINSEL: u32::from(output_pin.unwrap_or_default()),
+            PINCFG: if output_pin.is_some() {PINCFG_3} else {PINCFG_0}, // Pin output enabled
+            PINPOL: PINPOL_0, // Active high
+            TIMOD: TIMOD_3, // 8-bit PWM mode
+        );
+        ral::write_reg!(ral::flexio, self.flexio, TIMCFG[usize::from(timer_id)],
+            TIMOUT: TIMOUT_2,
+            TIMDEC: TIMDEC_0, // Input clock from FlexIO clock
+            TIMRST: TIMRST_6, // Reset on trigger rising edge
+            TIMDIS: TIMDIS_2, // Disable on timer over
+            TIMENA: TIMENA_6, // Enabled on trigger rising edge
+            TSTOP: TSTOP_0, // No stop bit
+            TSTART: TSTART_0, // No start bit
+        );
+    }
 }
 
 impl<const N: u8, PINS: Pins<N>> Ws2812Driver<N, PINS>
@@ -213,15 +249,18 @@ where
         const SHIFTER_TIMER: u8 = 0;
         const LOW_BIT_TIMER: u8 = 1;
         const HIGH_BIT_TIMER: u8 = 2;
+        const IDLE_TIMER: u8 = 3;
 
         let shift_output_pin = PINS::FLEXIO_PIN_OFFSETS[0];
         let shift_timer_output_pin = PINS::FLEXIO_PIN_OFFSETS[1];
         let neopixel_output_pin = PINS::FLEXIO_PIN_OFFSETS[2];
+        let idle_timer_output_pin = Some(PINS::FLEXIO_PIN_OFFSETS[3]);
 
         driver.configure_shifter(DATA_SHIFTER, SHIFTER_TIMER, shift_output_pin);
         driver.configure_shift_timer(SHIFTER_TIMER, DATA_SHIFTER, shift_timer_output_pin);
         driver.configure_low_bit_timer(LOW_BIT_TIMER, shift_timer_output_pin, neopixel_output_pin);
         driver.configure_high_bit_timer(HIGH_BIT_TIMER, shift_output_pin, neopixel_output_pin);
+        driver.configure_idle_timer(IDLE_TIMER, shift_timer_output_pin, idle_timer_output_pin);
 
         // for (pos, pin) in PINS::FLEXIO_PIN_OFFSETS.iter().copied().enumerate() {
         //     //ral::write_reg!(ral::flexio, flexio,)
@@ -234,11 +273,18 @@ where
     pub fn dummy_write(&mut self) {
         ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[0], 0x555000ff);
 
+        // Clear timer register
+        ral::write_reg!(ral::flexio, self.flexio, TIMSTAT, 0b1000);
+
+        // Write data
         while ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) == 0 {}
         ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[0], 0x555000ff);
-
         while ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) == 0 {}
         ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[0], 0x555000fe);
+        while ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) == 0 {}
+
+        // Wait for transfer finished
+        while (ral::read_reg!(ral::flexio, self.flexio, TIMSTAT) & 0b1000) == 0 {}
     }
 }
 

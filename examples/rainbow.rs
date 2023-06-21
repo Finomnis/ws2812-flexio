@@ -72,7 +72,9 @@ fn main() -> ! {
     log::debug!("FlexIO initialized.");
 
     log::info!("Performing dummy write ...");
-    neopixel.dummy_write();
+    loop {
+        neopixel.dummy_write();
+    }
     log::debug!("Write done.");
 
     // Blink with a cycle length of 2 seconds, to make it verifyable that
