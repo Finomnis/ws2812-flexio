@@ -130,7 +130,34 @@ where
             TIMDEC: TIMDEC_0, // Input clock from FlexIO clock
             TIMRST: TIMRST_0, // Never reset
             TIMDIS: TIMDIS_2, // Disabled on timer compare (upper 8 bits match and decrement)
-            TIMENA: TIMENA_6, // Enabled on trigger high
+            TIMENA: TIMENA_6, // Enabled on trigger rising edge
+            TSTOP: TSTOP_0, // No stop bit
+            TSTART: TSTART_0, // No start bit
+        );
+    }
+
+    pub fn configure_high_bit_timer(&mut self, timer_id: u8, shift_pin: u8, output_pin: u8) {
+        ral::write_reg!(
+            ral::flexio,
+            self.flexio,
+            TIMCMP[usize::from(timer_id)],
+            (u32::from(HIGH_BIT_CYCLES_OFF - 1) << 8) | (u32::from(HIGH_BIT_CYCLES_ON - 1))
+        );
+        ral::write_reg!(ral::flexio, self.flexio, TIMCTL[usize::from(timer_id)],
+            TRGSEL: u32::from(shift_pin) * 2, // Use shift output as trigger
+            TRGPOL: TRGPOL_0, // Trigger when shift output gets high
+            TRGSRC: TRGSRC_1, // Internal trigger
+            PINSEL: u32::from(output_pin),
+            PINCFG: PINCFG_3, // Pin output enabled
+            PINPOL: PINPOL_0, // Active high
+            TIMOD: TIMOD_2, // 8-bit PWM mode
+        );
+        ral::write_reg!(ral::flexio, self.flexio, TIMCFG[usize::from(timer_id)],
+            TIMOUT: TIMOUT_0, // One when enabled, not affected by reset
+            TIMDEC: TIMDEC_0, // Input clock from FlexIO clock
+            TIMRST: TIMRST_0, // Never reset
+            TIMDIS: TIMDIS_6, // Disabled on trigger falling edge
+            TIMENA: TIMENA_6, // Enabled on trigger rising edge
             TSTOP: TSTOP_0, // No stop bit
             TSTART: TSTART_0, // No start bit
         );
@@ -187,13 +214,14 @@ where
         const LOW_BIT_TIMER: u8 = 1;
         const HIGH_BIT_TIMER: u8 = 2;
 
-        driver.configure_shifter(DATA_SHIFTER, SHIFTER_TIMER, PINS::FLEXIO_PIN_OFFSETS[0]);
-        driver.configure_shift_timer(SHIFTER_TIMER, DATA_SHIFTER, PINS::FLEXIO_PIN_OFFSETS[1]);
-        driver.configure_low_bit_timer(
-            LOW_BIT_TIMER,
-            PINS::FLEXIO_PIN_OFFSETS[1],
-            PINS::FLEXIO_PIN_OFFSETS[2],
-        );
+        let shift_output_pin = PINS::FLEXIO_PIN_OFFSETS[0];
+        let shift_timer_output_pin = PINS::FLEXIO_PIN_OFFSETS[1];
+        let neopixel_output_pin = PINS::FLEXIO_PIN_OFFSETS[2];
+
+        driver.configure_shifter(DATA_SHIFTER, SHIFTER_TIMER, shift_output_pin);
+        driver.configure_shift_timer(SHIFTER_TIMER, DATA_SHIFTER, shift_timer_output_pin);
+        driver.configure_low_bit_timer(LOW_BIT_TIMER, shift_timer_output_pin, neopixel_output_pin);
+        driver.configure_high_bit_timer(HIGH_BIT_TIMER, shift_output_pin, neopixel_output_pin);
 
         // for (pos, pin) in PINS::FLEXIO_PIN_OFFSETS.iter().copied().enumerate() {
         //     //ral::write_reg!(ral::flexio, flexio,)
@@ -210,7 +238,7 @@ where
         ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[0], 0x555000ff);
 
         while ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) == 0 {}
-        ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[0], 0x555000ff);
+        ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[0], 0x555000fe);
     }
 }
 
