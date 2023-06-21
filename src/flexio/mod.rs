@@ -19,7 +19,7 @@ where
     _pins: PINS,
 }
 
-const CLOCK_DIVIDER: u8 = 75; // 60 MHz / 75 = 800 KHz
+const CLOCK_DIVIDER: u8 = 10; // 16 MHz / 10 / 2 (Timer toggles; meaning we need two cycles for one timer clock cycle) = 800 KHz
 
 struct DriverBuilder<const N: u8, PINS: Pins<N>>
 where
@@ -59,17 +59,17 @@ where
     pub fn configure_shifter(&mut self, shifter_id: u8, input_timer: u8, output_pin: u8) {
         ral::write_reg!(ral::flexio, self.flexio, SHIFTCTL[usize::from(shifter_id)],
             TIMSEL: u32::from(input_timer), // Use timer 0 for our clock input
-            TIMPOL: 0, // Shift on positive edge of the timer
-            PINCFG: 0b11, // Output to a pin. TODO: only output to high-bit timer
+            TIMPOL: TIMPOL_0, // Shift on positive edge of the timer
+            PINCFG: PINCFG_3, // Output to a pin. TODO: only output to high-bit timer
             PINSEL: u32::from(output_pin), // Output pin
-            PINPOL: 0, // Pin polarity
-            SMOD: 0b010, // Transmit mode
+            PINPOL: PINPOL_0, // Pin polarity
+            SMOD: SMOD_2, // Transmit mode
         );
         ral::write_reg!(ral::flexio, self.flexio, SHIFTCFG[usize::from(shifter_id)],
             PWIDTH: 0, // Single bit shift-width
-            INSRC: 0, // Input source; irrelevant for transmit mode
-            SSTOP: 0b00, // No stop bit
-            SSTART: 0b01, // No start bit, load data on first shift
+            INSRC: INSRC_0, // Input source; irrelevant for transmit mode
+            SSTOP: SSTOP_0, // No stop bit
+            SSTART: SSTART_1, // No start bit, load data on first shift
         );
     }
 
@@ -84,23 +84,50 @@ where
         );
         ral::write_reg!(ral::flexio, self.flexio, TIMCTL[usize::from(timer_id)],
             TRGSEL: u32::from(shifter_id) * 4 + 1, // Use shifter flag as trigger
-            TRGPOL: 1, // Trigger whan shifter got filled
-            TRGSRC: 1, // Internal trigger
+            TRGPOL: TRGPOL_1, // Trigger when shifter got filled
+            TRGSRC: TRGSRC_1, // Internal trigger
             PINSEL: u32::from(output_pin),
-            PINCFG: 0b11, // Pin output enabled
-            PINPOL: 0, // Active high
-            TIMOD: 0b01, // 8-bit dual counter baud/bit mode
+            PINCFG: PINCFG_3, // Pin output enabled
+            PINPOL: PINPOL_0, // Active high
+            TIMOD: TIMOD_1, // 8-bit dual counter baud/bit mode
         );
         ral::write_reg!(ral::flexio, self.flexio, TIMCFG[usize::from(timer_id)],
-            TIMOUT: 0b01, // Zero when enabled, not affected by reset
-            TIMDEC: 0b00, // Input clock from FlexIO clock
-            TIMRST: 0b110, // Never reset
-            TIMDIS: 0b010, // Disabled on timer compare (upper 8 bits match and decrement)
-            TIMENA: 0b010, // Enabled on trigger high
-            TSTOP: 0b00, // No stop bit
-            TSTART: 0b00, // No start bit
+            TIMOUT: TIMOUT_1, // Zero when enabled, not affected by reset
+            TIMDEC: TIMDEC_0, // Input clock from FlexIO clock
+            TIMRST: TIMRST_0, // Never reset
+            TIMDIS: TIMDIS_2, // Disabled on timer compare (upper 8 bits match and decrement)
+            TIMENA: TIMENA_2, // Enabled on trigger high
+            TSTOP: TSTOP_0, // No stop bit
+            TSTART: TSTART_0, // No start bit
         );
     }
+
+    // pub fn configure_low_bit_timer(&mut self, timer_id: u8, shifter_id: u8, output_pin: u8) {
+    //     ral::write_reg!(
+    //         ral::flexio,
+    //         self.flexio,
+    //         TIMCMP[usize::from(timer_id)],
+    //         ((CYCLES_PER_SHIFTBUFFER - 1) << 8) | (u32::from(CLOCK_DIVIDER) - 1)
+    //     );
+    //     ral::write_reg!(ral::flexio, self.flexio, TIMCTL[usize::from(timer_id)],
+    //         TRGSEL: u32::from(shifter_id) * 4 + 1, // Use shifter flag as trigger
+    //         TRGPOL: TRGPOL_1, // Trigger when shifter got filled
+    //         TRGSRC: TRGSRC_1, // Internal trigger
+    //         PINSEL: u32::from(output_pin),
+    //         PINCFG: PINCFG_3, // Pin output enabled
+    //         PINPOL: PINPOL_0, // Active high
+    //         TIMOD: TIMOD_1, // 8-bit dual counter baud/bit mode
+    //     );
+    //     ral::write_reg!(ral::flexio, self.flexio, TIMCFG[usize::from(timer_id)],
+    //         TIMOUT: TIMOUT_1, // Zero when enabled, not affected by reset
+    //         TIMDEC: TIMDEC_0, // Input clock from FlexIO clock
+    //         TIMRST: TIMRST_0, // Never reset
+    //         TIMDIS: TIMDIS_2, // Disabled on timer compare (upper 8 bits match and decrement)
+    //         TIMENA: TIMENA_2, // Enabled on trigger high
+    //         TSTOP: TSTOP_0, // No stop bit
+    //         TSTART: TSTART_0, // No start bit
+    //     );
+    // }
 }
 
 impl<const N: u8, PINS: Pins<N>> Ws2812Driver<N, PINS>
@@ -109,7 +136,7 @@ where
 {
     /// Initializes the FlexIO driver.
     ///
-    /// IMPORTANT! Make sure that the clock input of the FlexIO instance is at 60MHz
+    /// IMPORTANT! Make sure that the clock input of the FlexIO instance is at 16MHz
     /// prior to calling this function.
     pub fn init(
         ccm: &mut ral::ccm::CCM,
@@ -148,8 +175,14 @@ where
         //////////// Configure FlexIO registers /////////////////
         let mut driver = DriverBuilder::new(flexio, pins);
 
-        driver.configure_shifter(0, 0, PINS::FLEXIO_PIN_OFFSETS[0]);
-        driver.configure_shift_timer(0, 0, PINS::FLEXIO_PIN_OFFSETS[1]);
+        const DATA_SHIFTER: u8 = 0;
+        const SHIFTER_TIMER: u8 = 0;
+        const HIGH_BIT_TIMER: u8 = 1;
+        const LOw_BIT_TIMER: u8 = 2;
+
+        driver.configure_shifter(DATA_SHIFTER, SHIFTER_TIMER, PINS::FLEXIO_PIN_OFFSETS[0]);
+        driver.configure_shift_timer(SHIFTER_TIMER, DATA_SHIFTER, PINS::FLEXIO_PIN_OFFSETS[1]);
+        // driver.configure_high_bit_timer(HIGH_BIT_TIMER);
 
         // for (pos, pin) in PINS::FLEXIO_PIN_OFFSETS.iter().copied().enumerate() {
         //     //ral::write_reg!(ral::flexio, flexio,)
