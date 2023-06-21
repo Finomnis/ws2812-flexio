@@ -32,6 +32,7 @@ fugit = "0.3.6" # Time
 
 # For local development of imxrt-hal
 [patch.crates-io]
+imxrt-ral = { git = "https://github.com/Finomnis/imxrt-ral.git", branch = "pinsel_5bit" }
 imxrt-hal = { git = "https://github.com/Finomnis/imxrt-hal.git", branch = "flexio" }
 imxrt-iomuxc = { git = "https://github.com/Finomnis/imxrt-iomuxc.git", branch = "flexio_0.2.1" }
 teensy4-bsp = { git = "https://github.com/Finomnis/teensy4-rs.git", branch = "flexio" }
