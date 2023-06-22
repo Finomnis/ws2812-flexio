@@ -4,7 +4,7 @@ use imxrt_ral as ral;
 use hal::ccm::clock_gate;
 use ral::{flexio, Valid};
 
-use super::{driver_builder::DriverBuilder, errors, pins::Pins, Ws2812Driver};
+use super::{driver_builder::DriverBuilder, errors, pins::Pins, PreparedPixelsRef, Ws2812Driver};
 
 impl<const N: u8, PINS: Pins<N>> Ws2812Driver<N, PINS>
 where
@@ -76,18 +76,24 @@ where
     }
 
     /// A dummy function for development purposes
-    pub fn dummy_write(&mut self) {
-        ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[0], 0x555000ff);
+    pub fn dummy_write(&mut self, data: &dyn PreparedPixelsRef) {
+        // TODO parameterize everything
+        let data = data.get_dma_buffer();
 
         // Clear timer register
+        while ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) == 0 {}
         ral::write_reg!(ral::flexio, self.flexio, TIMSTAT, 0b1000);
 
         // Write data
-        while ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) == 0 {}
-        ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[0], 0x555000ff);
-        while ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) == 0 {}
-        ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[0], 0x555000fe);
-        while ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) == 0 {}
+        for d in data.iter().cloned() {
+            #[cfg(target_endian = "big")]
+            ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[0], d);
+
+            #[cfg(target_endian = "little")]
+            ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBBS[0], d);
+
+            while ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) == 0 {}
+        }
 
         // Wait for transfer finished
         while (ral::read_reg!(ral::flexio, self.flexio, TIMSTAT) & 0b1000) == 0 {}

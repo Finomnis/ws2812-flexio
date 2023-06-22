@@ -56,6 +56,8 @@ fn main() -> ! {
     let time_us = move || us_timer.count();
     log::debug!("Timer initialized.");
 
+    let prepared_pixels = ws2812_flexio::flexio::PreparedPixels::<332, 3>::new();
+
     // Ws2812 driver
     log::info!("Initializing FlexIO ...");
     // Set FlexIO clock to 16Mhz, as required by the driver
@@ -73,7 +75,7 @@ fn main() -> ! {
 
     log::info!("Performing dummy write ...");
     loop {
-        neopixel.dummy_write();
+        neopixel.dummy_write(&prepared_pixels);
     }
     log::debug!("Write done.");
 
