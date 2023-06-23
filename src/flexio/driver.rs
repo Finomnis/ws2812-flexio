@@ -51,8 +51,6 @@ where
             return Err(errors::WS2812InitError::NotEnoughTimers);
         }
 
-        // TODO check timers, shifters and triggers count
-
         //////////// Configure FlexIO registers /////////////////
         let mut driver = DriverBuilder::new(flexio, pins);
 
