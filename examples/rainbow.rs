@@ -56,9 +56,10 @@ fn main() -> ! {
     let time_us = move || us_timer.count();
     log::debug!("Timer initialized.");
 
-    let mut prepared_pixels = ws2812_flexio::PreparedPixels::<332, 3>::new();
+    let mut prepared_pixels1 = ws2812_flexio::PreparedPixels::<332, 3>::new();
+    let mut prepared_pixels2 = ws2812_flexio::PreparedPixels::<332, 3>::new();
 
-    let pixels = core::iter::from_fn({
+    let mut pixels = core::iter::from_fn({
         let mut pos = 0;
         move || {
             let p = pos as u32;
@@ -66,26 +67,26 @@ fn main() -> ! {
             Some([(3 * p) as u8, (3 * p + 1) as u8, (3 * p + 2) as u8])
         }
     });
-    prepared_pixels.prepare_pixels(pixels);
+    prepared_pixels1.prepare_pixels(&mut pixels);
+    prepared_pixels2.prepare_pixels(&mut pixels);
 
     // Ws2812 driver
     log::info!("Initializing FlexIO ...");
     // Set FlexIO clock to 16Mhz, as required by the driver
-    ral::modify_reg!(ral::ccm, ccm, CS1CDR,
+    ral::modify_reg!(
+        ral::ccm,
+        ccm,
+        CS1CDR,
         FLEXIO1_CLK_PRED: FLEXIO1_CLK_PRED_4,
         FLEXIO1_CLK_PODF: DIVIDE_6,
     );
-    let mut neopixel = ws2812_flexio::flexio::Ws2812Driver::init(
-        &mut ccm,
-        flexio2,
-        (pins.p6, pins.p7, pins.p8, pins.p9),
-    )
-    .unwrap();
+    let mut neopixel =
+        ws2812_flexio::flexio::Ws2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7)).unwrap();
     log::debug!("FlexIO initialized.");
 
-    log::info!("Performing dummy write ...");
-    for _ in 0..10 {
-        neopixel.dummy_write(&prepared_pixels);
+    log::info!("Performing neopixel write ...");
+    for _ in 0..100 {
+        neopixel.write([Some(&prepared_pixels1), Some(&prepared_pixels2)]);
     }
     log::debug!("Write done.");
 
