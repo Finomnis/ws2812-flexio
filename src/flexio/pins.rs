@@ -5,7 +5,7 @@ use hal::iomuxc::{self, flexio::Pin};
 use paste::paste;
 
 /// The pins to use for WS2812.
-pub trait Pins<const N: u8> {
+pub trait Pins<const N: u8, const L: usize> {
     /// The amount of pins this object contains.
     const PIN_COUNT: u32;
 
@@ -27,7 +27,7 @@ macro_rules! count {
 macro_rules! impl_pins {
     ($($n:literal)+) => {
         paste! {
-            impl<const N: u8, $([<P $n>]: Pin<N>),+> Pins<N> for ($([<P $n>]),+,) {
+            impl<const N: u8, $([<P $n>]: Pin<N>),+> Pins<N, {count!($($n)+) as usize}> for ($([<P $n>]),+,) {
                 fn configure(&mut self) {
                     $(
                         iomuxc::flexio::prepare(&mut self.$n);

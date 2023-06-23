@@ -11,7 +11,7 @@ mod pins;
 pub use pins::Pins;
 
 /// A WS2812 Neopixel LED Strip driver based on the i.MX RT FlexIO module
-pub struct Ws2812Driver<const N: u8, PINS: Pins<N>>
+pub struct Ws2812Driver<const N: u8, const L: usize, PINS: Pins<N, L>>
 where
     flexio::Instance<N>: Valid,
 {
