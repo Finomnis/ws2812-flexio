@@ -21,12 +21,15 @@ impl Pixel<4> for [u8; 4] {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(feature = "smart-leds-trait")))]
 #[cfg(feature = "smart-leds-trait")]
 impl Pixel<3> for smart_leds_trait::RGB8 {
     fn get_ws2812_bytes(&self) -> [u8; 3] {
         [self.g, self.r, self.b]
     }
 }
+
+#[cfg_attr(docsrs, doc(cfg(feature = "smart-leds-trait")))]
 #[cfg(feature = "smart-leds-trait")]
 impl Pixel<4> for smart_leds_trait::RGBW<u8> {
     fn get_ws2812_bytes(&self) -> [u8; 4] {
@@ -34,6 +37,7 @@ impl Pixel<4> for smart_leds_trait::RGBW<u8> {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(feature = "palette")))]
 #[cfg(feature = "palette")]
 impl Pixel<3> for palette::LinSrgb<u8> {
     fn get_ws2812_bytes(&self) -> [u8; 3] {
