@@ -90,10 +90,10 @@ fn main() -> ! {
     log::debug!("FlexIO initialized.");
 
     log::info!("Performing neopixel write ...");
-    for _ in 0..2 {
+    for _ in 0..1 {
         log::info!("Writing data: {:#x?}", prepared_pixels1);
         log::info!("Writing data: {:#x?}", prepared_pixels2);
-        neopixel.write([None, Some(&prepared_pixels2)]);
+        neopixel.write([Some(&prepared_pixels1), Some(&prepared_pixels2)]);
     }
     log::debug!("Write done.");
 

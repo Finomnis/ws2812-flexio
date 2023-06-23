@@ -39,6 +39,7 @@ where
         log::debug!("        {} timers", available_timers);
         log::debug!("        {} shifters", available_shifters);
         log::debug!("Pin Offsets: {:?}", PINS::FLEXIO_PIN_OFFSETS);
+        log::debug!("Debug Pins: {:?}", DEBUGPINS::FLEXIO_PIN_OFFSETS);
 
         if available_pins < PINS::PIN_COUNT {
             return Err(errors::WS2812InitError::NotEnoughPins);
@@ -86,7 +87,7 @@ where
 
             let idle_timer_output_pin = None;
 
-            let (shift_output_pin, shift_timer_output_pin) = if pin_pos == 1 {
+            let (shift_output_pin, shift_timer_output_pin) = if pin_pos == 0 {
                 (
                     DEBUGPINS::FLEXIO_PIN_OFFSETS[0],
                     DEBUGPINS::FLEXIO_PIN_OFFSETS[1],
@@ -110,31 +111,31 @@ where
     }
 
     fn get_shifter_id(pin_pos: u8) -> u8 {
-        pin_pos
+        1 - pin_pos
     }
 
     fn get_shifter_timer_id(pin_pos: u8) -> u8 {
-        4 * pin_pos + 0
+        7 - (4 * pin_pos + 0)
     }
     fn get_low_bit_timer_id(pin_pos: u8) -> u8 {
-        4 * pin_pos + 1
+        7 - (4 * pin_pos + 1)
     }
     fn get_high_bit_timer_id(pin_pos: u8) -> u8 {
-        4 * pin_pos + 2
+        7 - (4 * pin_pos + 2)
     }
     fn get_idle_timer_id(pin_pos: u8) -> u8 {
-        4 * pin_pos + 3
+        7 - (4 * pin_pos + 3)
     }
 
     fn shift_buffer_empty(&self, pin_pos: u8) -> bool {
         let mask = 1u32 << Self::get_shifter_id(pin_pos);
         let result = (ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) & mask) != 0;
-        log::info!("shift_buffer_empty({}) -> {:?}", pin_pos, result);
+        log::trace!("shift_buffer_empty({}) -> {:?}", pin_pos, result);
         result
     }
 
     fn fill_shift_buffer(&self, pin_pos: u8, data: u32) {
-        log::info!("fill_shift_buffer({}, {})", pin_pos, data);
+        log::trace!("fill_shift_buffer({}, {})", pin_pos, data);
         let buf_id = usize::from(Self::get_shifter_id(pin_pos));
 
         #[cfg(target_endian = "big")]
@@ -145,7 +146,7 @@ where
     }
 
     fn reset_idle_timer_finished_flag(&mut self, pin_pos: u8) {
-        log::info!("reset_idle_timer_finished_flag({})", pin_pos);
+        log::trace!("reset_idle_timer_finished_flag({})", pin_pos);
         let mask = 1u32 << Self::get_idle_timer_id(pin_pos);
         ral::write_reg!(ral::flexio, self.flexio, TIMSTAT, mask);
     }
@@ -153,7 +154,7 @@ where
     fn idle_timer_finished(&mut self, pin_pos: u8) -> bool {
         let mask = 1u32 << Self::get_idle_timer_id(pin_pos);
         let result = (ral::read_reg!(ral::flexio, self.flexio, TIMSTAT) & mask) != 0;
-        log::info!("idle_timer_finished({}) -> {:?}", pin_pos, result);
+        log::trace!("idle_timer_finished({}) -> {:?}", pin_pos, result);
         result
     }
 
@@ -165,7 +166,7 @@ where
     pub fn write(&mut self, data: [Option<&dyn PreparedPixelsRef>; L]) {
         let mut data_streams = data.map(|d| d.map(|d| d.get_dma_buffer()));
 
-        log::info!("Writing:\n{:#x?}", data_streams);
+        log::trace!("Writing:\n{:#x?}", data_streams);
 
         // Wait for the buffer to idle and clear timer overflow flag
         for i in data_streams
