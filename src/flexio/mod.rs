@@ -4,10 +4,9 @@ use ral::{flexio, Valid};
 
 mod driver;
 mod driver_builder;
-mod pins;
-
 /// Errors the driver can cause
 pub mod errors;
+mod pins;
 
 pub use pins::Pins;
 
@@ -19,6 +18,3 @@ where
     flexio: flexio::Instance<N>,
     _pins: PINS,
 }
-
-// TODO: Add PreparedPixels struct that contains prepared pixels.
-// TODO: Add Iterator<Item = (Pixel, Pixel)> based pixel-setter function.

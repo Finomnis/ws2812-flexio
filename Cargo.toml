@@ -5,12 +5,23 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = []
+smart-leds-trait = ["dep:smart-leds-trait"]
+palette = ["dep:palette"]
+
 [dependencies]
 imxrt-hal = "0.5.2"
 imxrt-ral = "0.5.0"
 log = "0.4.19"
 paste = "1.0.12"
 snafu = { version = "0.7.4", default-features = false }
+
+# Pixel types
+smart-leds-trait = { version = "0.2.1", optional = true, default-features = false }
+palette = { version = "0.7.2", optional = true, default-features = false, features = [
+    "libm",
+] }
 
 
 [dev-dependencies]
@@ -36,3 +47,8 @@ imxrt-ral = { git = "https://github.com/Finomnis/imxrt-ral.git", branch = "pinse
 imxrt-hal = { git = "https://github.com/Finomnis/imxrt-hal.git", branch = "flexio" }
 imxrt-iomuxc = { git = "https://github.com/Finomnis/imxrt-iomuxc.git", branch = "flexio_0.2.1" }
 teensy4-bsp = { git = "https://github.com/Finomnis/teensy4-rs.git", branch = "flexio" }
+
+# Allow docsrs options
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
