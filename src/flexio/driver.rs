@@ -4,7 +4,8 @@ use imxrt_ral as ral;
 use hal::ccm::clock_gate;
 use ral::{flexio, Valid};
 
-use super::{driver_builder::DriverBuilder, errors, pins::Pins, PreparedPixelsRef, Ws2812Driver};
+use super::{driver_builder::DriverBuilder, errors, pins::Pins, Ws2812Driver};
+use crate::prepared_pixels::PreparedPixelsRef;
 
 impl<const N: u8, PINS: Pins<N>> Ws2812Driver<N, PINS>
 where

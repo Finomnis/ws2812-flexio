@@ -56,7 +56,7 @@ fn main() -> ! {
     let time_us = move || us_timer.count();
     log::debug!("Timer initialized.");
 
-    let mut prepared_pixels = ws2812_flexio::flexio::PreparedPixels::<332, 3>::new();
+    let mut prepared_pixels = ws2812_flexio::PreparedPixels::<332, 3>::new();
 
     let pixels = core::iter::from_fn({
         let mut pos = 0;
@@ -84,7 +84,7 @@ fn main() -> ! {
     log::debug!("FlexIO initialized.");
 
     log::info!("Performing dummy write ...");
-    loop {
+    for _ in 0..10 {
         neopixel.dummy_write(&prepared_pixels);
     }
     log::debug!("Write done.");

@@ -5,3 +5,9 @@
 
 /// FlexIO driver
 pub mod flexio;
+
+mod pixel;
+mod prepared_pixels;
+
+pub use pixel::Pixel;
+pub use prepared_pixels::PreparedPixels;
