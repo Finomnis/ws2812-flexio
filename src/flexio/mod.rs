@@ -18,6 +18,3 @@ where
     flexio: flexio::Instance<N>,
     _pins: PINS,
 }
-
-// TODO: Add PreparedPixels struct that contains prepared pixels.
-// TODO: Add Iterator<Item = (Pixel, Pixel)> based pixel-setter function.
