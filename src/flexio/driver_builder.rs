@@ -17,19 +17,6 @@ const LOW_BIT_CYCLES_OFF: u8 = CYCLE_LENGTH - LOW_BIT_CYCLES_ON;
 const HIGH_BIT_CYCLES_OFF: u8 = CYCLE_LENGTH - HIGH_BIT_CYCLES_ON;
 const LATCH_DELAY: u16 = CYCLE_LENGTH as u16 * LATCH_DELAY_PIXELS;
 
-macro_rules! print_arr {
-    ($self: expr, $name: ident) => {
-        for (pos, el) in $self.flexio.$name.iter().enumerate() {
-            log::info!(
-                "   {}[{}]: {:#010x}",
-                core::stringify!($name),
-                pos,
-                el.read()
-            );
-        }
-    };
-}
-
 pub struct DriverBuilder<const N: u8, const L: usize, PINS: Pins<N, L>>
 where
     flexio::Instance<N>: Valid,
@@ -56,14 +43,6 @@ where
     }
 
     pub fn build(self) -> Ws2812Driver<N, L, PINS> {
-        log::info!("Driver built with:");
-
-        print_arr!(self, SHIFTCFG);
-        print_arr!(self, SHIFTCTL);
-        print_arr!(self, TIMCFG);
-        print_arr!(self, TIMCTL);
-        print_arr!(self, TIMCMP);
-
         // Enable
         ral::write_reg!(ral::flexio, self.flexio, CTRL, FLEXEN: FLEXEN_1);
 

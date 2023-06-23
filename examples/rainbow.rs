@@ -56,8 +56,8 @@ fn main() -> ! {
     let time_us = move || us_timer.count();
     log::debug!("Timer initialized.");
 
-    let mut prepared_pixels1 = ws2812_flexio::PreparedPixels::<8, 3>::new();
-    let mut prepared_pixels2 = ws2812_flexio::PreparedPixels::<6, 3>::new();
+    let mut prepared_pixels1 = ws2812_flexio::PreparedPixels::<332, 3>::new();
+    let mut prepared_pixels2 = ws2812_flexio::PreparedPixels::<332, 3>::new();
 
     let mut pixels = core::iter::from_fn({
         let mut pos = 0;
@@ -80,19 +80,12 @@ fn main() -> ! {
         FLEXIO1_CLK_PRED: FLEXIO1_CLK_PRED_4,
         FLEXIO1_CLK_PODF: DIVIDE_6,
     );
-    let mut neopixel = ws2812_flexio::flexio::Ws2812Driver::init(
-        &mut ccm,
-        flexio2,
-        (pins.p6, pins.p7),
-        (pins.p8, pins.p9),
-    )
-    .unwrap();
+    let mut neopixel =
+        ws2812_flexio::flexio::Ws2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7)).unwrap();
     log::debug!("FlexIO initialized.");
 
     log::info!("Performing neopixel write ...");
-    for _ in 0..1 {
-        log::info!("Writing data: {:#x?}", prepared_pixels1);
-        log::info!("Writing data: {:#x?}", prepared_pixels2);
+    for _ in 0..100 {
         neopixel.write([Some(&prepared_pixels1), Some(&prepared_pixels2)]);
     }
     log::debug!("Write done.");

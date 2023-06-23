@@ -15,11 +15,10 @@ where
     ///
     /// IMPORTANT! Make sure that the clock input of the FlexIO instance is at 16MHz
     /// prior to calling this function.
-    pub fn init<const L2: usize, DEBUGPINS: Pins<N, L2>>(
+    pub fn init(
         ccm: &mut ral::ccm::CCM,
         flexio: flexio::Instance<N>,
         pins: PINS,
-        mut debug_pins: DEBUGPINS,
     ) -> Result<Self, errors::WS2812InitError> {
         // Configure clocks
         clock_gate::flexio::<N>().set(ccm, clock_gate::ON);
@@ -39,7 +38,6 @@ where
         log::debug!("        {} timers", available_timers);
         log::debug!("        {} shifters", available_shifters);
         log::debug!("Pin Offsets: {:?}", PINS::FLEXIO_PIN_OFFSETS);
-        log::debug!("Debug Pins: {:?}", DEBUGPINS::FLEXIO_PIN_OFFSETS);
 
         if available_pins < PINS::PIN_COUNT {
             return Err(errors::WS2812InitError::NotEnoughPins);
@@ -57,7 +55,6 @@ where
 
         //////////// Configure FlexIO registers /////////////////
         let mut driver = DriverBuilder::new(flexio, pins);
-        debug_pins.configure();
 
         let mut get_next_free_pin = {
             let mut next_free_pin = 0;
@@ -87,14 +84,8 @@ where
 
             let idle_timer_output_pin = None;
 
-            let (shift_output_pin, shift_timer_output_pin) = if pin_pos == 0 {
-                (
-                    DEBUGPINS::FLEXIO_PIN_OFFSETS[0],
-                    DEBUGPINS::FLEXIO_PIN_OFFSETS[1],
-                )
-            } else {
-                (get_next_free_pin()?, get_next_free_pin()?)
-            };
+            let shift_output_pin = get_next_free_pin()?;
+            let shift_timer_output_pin = get_next_free_pin()?;
 
             driver.configure_shifter(data_shifter, shifter_timer, shift_output_pin);
             driver.configure_shift_timer(shifter_timer, data_shifter, shift_timer_output_pin);
@@ -111,31 +102,28 @@ where
     }
 
     fn get_shifter_id(pin_pos: u8) -> u8 {
-        1 - pin_pos
+        pin_pos
     }
 
     fn get_shifter_timer_id(pin_pos: u8) -> u8 {
-        7 - (4 * pin_pos + 0)
+        4 * pin_pos + 0
     }
     fn get_low_bit_timer_id(pin_pos: u8) -> u8 {
-        7 - (4 * pin_pos + 1)
+        4 * pin_pos + 1
     }
     fn get_high_bit_timer_id(pin_pos: u8) -> u8 {
-        7 - (4 * pin_pos + 2)
+        4 * pin_pos + 2
     }
     fn get_idle_timer_id(pin_pos: u8) -> u8 {
-        7 - (4 * pin_pos + 3)
+        4 * pin_pos + 3
     }
 
     fn shift_buffer_empty(&self, pin_pos: u8) -> bool {
         let mask = 1u32 << Self::get_shifter_id(pin_pos);
-        let result = (ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) & mask) != 0;
-        log::trace!("shift_buffer_empty({}) -> {:?}", pin_pos, result);
-        result
+        (ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) & mask) != 0
     }
 
     fn fill_shift_buffer(&self, pin_pos: u8, data: u32) {
-        log::trace!("fill_shift_buffer({}, {})", pin_pos, data);
         let buf_id = usize::from(Self::get_shifter_id(pin_pos));
 
         #[cfg(target_endian = "big")]
@@ -146,16 +134,13 @@ where
     }
 
     fn reset_idle_timer_finished_flag(&mut self, pin_pos: u8) {
-        log::trace!("reset_idle_timer_finished_flag({})", pin_pos);
         let mask = 1u32 << Self::get_idle_timer_id(pin_pos);
         ral::write_reg!(ral::flexio, self.flexio, TIMSTAT, mask);
     }
 
     fn idle_timer_finished(&mut self, pin_pos: u8) -> bool {
         let mask = 1u32 << Self::get_idle_timer_id(pin_pos);
-        let result = (ral::read_reg!(ral::flexio, self.flexio, TIMSTAT) & mask) != 0;
-        log::trace!("idle_timer_finished({}) -> {:?}", pin_pos, result);
-        result
+        (ral::read_reg!(ral::flexio, self.flexio, TIMSTAT) & mask) != 0
     }
 
     /// Writes pixels to an LED strip.
@@ -165,8 +150,6 @@ where
     /// If you only want to send data to some pins, set the other data streams to `None`.
     pub fn write(&mut self, data: [Option<&dyn PreparedPixelsRef>; L]) {
         let mut data_streams = data.map(|d| d.map(|d| d.get_dma_buffer()));
-
-        log::trace!("Writing:\n{:#x?}", data_streams);
 
         // Wait for the buffer to idle and clear timer overflow flag
         for i in data_streams
