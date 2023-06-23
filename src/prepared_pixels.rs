@@ -1,6 +1,7 @@
 use super::Pixel;
 
 /// A buffer that prepares pixel data for FlexIO usage.
+#[derive(Debug)]
 #[repr(C, align(4))]
 pub struct PreparedPixels<const N: usize, const P: usize> {
     // Start with a `u32`, for 32bit alignment
