@@ -1,3 +1,5 @@
+use super::Pixel;
+
 /// A buffer that prepares pixel data for FlexIO usage.
 #[repr(C, align(4))]
 pub struct PreparedPixels<const N: usize, const P: usize> {
@@ -16,10 +18,27 @@ impl<const N: usize, const P: usize> PreparedPixels<N, P> {
     /// Creates a new PreparedPixels buffer.
     pub fn new() -> Self {
         Self {
-            len: N as u32,
-            data: [[0x12; P]; N],
+            len: 0,
+            data: [[0; P]; N],
             zero_termination: [0; 4],
         }
+    }
+
+    /// The amount of pixels that fit into this buffer
+    pub fn capacity(&self) -> usize {
+        N
+    }
+
+    /// Prepares a set of pixels for transmission to the LED strip.
+    pub fn prepare_pixels<T: Pixel<P>>(&mut self, pixels: impl Iterator<Item = T>) {
+        let mut len: usize = 0;
+        for (d, pixel) in self.data.iter_mut().zip(pixels) {
+            *d = pixel.get_ws2812_bytes();
+            len += 1;
+        }
+
+        self.data[len..].fill([0; P]);
+        self.len = len as u32;
     }
 }
 

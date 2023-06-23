@@ -12,4 +12,7 @@
     "rust-analyzer.linkedProjects": [
         "Cargo.toml",
     ],
+    "rust-analyzer.check.features": [
+        "palette,smart-leds-trait"
+    ],
 }
