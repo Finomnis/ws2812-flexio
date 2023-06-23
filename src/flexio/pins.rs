@@ -46,7 +46,9 @@ macro_rules! impl_pins {
 
 impl_pins!(0);
 impl_pins!(0 1);
+impl_pins!(0 1 2);
 impl_pins!(0 1 2 3);
+impl_pins!(0 1 2 3 4);
+impl_pins!(0 1 2 3 4 5);
+impl_pins!(0 1 2 3 4 5 6);
 impl_pins!(0 1 2 3 4 5 6 7);
-impl_pins!(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15);
-impl_pins!(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31);

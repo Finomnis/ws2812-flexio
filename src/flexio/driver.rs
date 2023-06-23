@@ -15,10 +15,11 @@ where
     ///
     /// IMPORTANT! Make sure that the clock input of the FlexIO instance is at 16MHz
     /// prior to calling this function.
-    pub fn init(
+    pub fn init<const L2: usize, DEBUGPINS: Pins<N, L2>>(
         ccm: &mut ral::ccm::CCM,
         flexio: flexio::Instance<N>,
         pins: PINS,
+        mut debug_pins: DEBUGPINS,
     ) -> Result<Self, errors::WS2812InitError> {
         // Configure clocks
         clock_gate::flexio::<N>().set(ccm, clock_gate::ON);
@@ -47,66 +48,94 @@ where
             return Err(errors::WS2812InitError::NotEnoughShifters);
         }
 
-        // if available_timers < (PINS::PIN_COUNT * 4) {
-        //     return Err(errors::WS2812InitError::NotEnoughTimers);
-        // }
+        if available_timers < (PINS::PIN_COUNT * 4) {
+            return Err(errors::WS2812InitError::NotEnoughTimers);
+        }
 
         // TODO check timers, shifters and triggers count
 
         //////////// Configure FlexIO registers /////////////////
         let mut driver = DriverBuilder::new(flexio, pins);
+        debug_pins.configure();
 
-        const DATA_SHIFTER: u8 = 0;
-        const SHIFTER_TIMER: u8 = 0;
-        const LOW_BIT_TIMER: u8 = 1;
-        const HIGH_BIT_TIMER: u8 = 2;
-        const IDLE_TIMER: u8 = 3;
+        let mut get_next_free_pin = {
+            let mut next_free_pin = 0;
+            move || {
+                while PINS::FLEXIO_PIN_OFFSETS.contains(&next_free_pin) {
+                    next_free_pin += 1;
+                }
+                if u32::from(next_free_pin) >= available_pins {
+                    Err(errors::WS2812InitError::NotEnoughPins)
+                } else {
+                    let result_pin = next_free_pin;
+                    next_free_pin += 1;
+                    Ok(result_pin)
+                }
+            }
+        };
 
-        let shift_output_pin = PINS::FLEXIO_PIN_OFFSETS[0];
-        let shift_timer_output_pin = PINS::FLEXIO_PIN_OFFSETS[1];
-        let neopixel_output_pin = PINS::FLEXIO_PIN_OFFSETS[2];
-        let idle_timer_output_pin = Some(PINS::FLEXIO_PIN_OFFSETS[3]);
+        for (pin_pos, pin_id) in PINS::FLEXIO_PIN_OFFSETS.iter().copied().enumerate() {
+            let pin_pos = pin_pos.try_into().unwrap();
+            let data_shifter = Self::get_shifter_id(pin_pos);
+            let shifter_timer = Self::get_shifter_timer_id(pin_pos);
+            let low_bit_timer = Self::get_low_bit_timer_id(pin_pos);
+            let high_bit_timer = Self::get_high_bit_timer_id(pin_pos);
+            let idle_timer = Self::get_idle_timer_id(pin_pos);
 
-        driver.configure_shifter(DATA_SHIFTER, SHIFTER_TIMER, shift_output_pin);
-        driver.configure_shift_timer(SHIFTER_TIMER, DATA_SHIFTER, shift_timer_output_pin);
-        driver.configure_low_bit_timer(LOW_BIT_TIMER, shift_timer_output_pin, neopixel_output_pin);
-        driver.configure_high_bit_timer(HIGH_BIT_TIMER, shift_output_pin, neopixel_output_pin);
-        driver.configure_idle_timer(IDLE_TIMER, shift_timer_output_pin, idle_timer_output_pin);
+            let neopixel_output_pin = pin_id;
 
-        // for (pos, pin) in PINS::FLEXIO_PIN_OFFSETS.iter().copied().enumerate() {
-        //     //ral::write_reg!(ral::flexio, flexio,)
-        // }
+            let idle_timer_output_pin = None;
+
+            let (shift_output_pin, shift_timer_output_pin) = if pin_pos == 1 {
+                (
+                    DEBUGPINS::FLEXIO_PIN_OFFSETS[0],
+                    DEBUGPINS::FLEXIO_PIN_OFFSETS[1],
+                )
+            } else {
+                (get_next_free_pin()?, get_next_free_pin()?)
+            };
+
+            driver.configure_shifter(data_shifter, shifter_timer, shift_output_pin);
+            driver.configure_shift_timer(shifter_timer, data_shifter, shift_timer_output_pin);
+            driver.configure_low_bit_timer(
+                low_bit_timer,
+                shift_timer_output_pin,
+                neopixel_output_pin,
+            );
+            driver.configure_high_bit_timer(high_bit_timer, shift_output_pin, neopixel_output_pin);
+            driver.configure_idle_timer(idle_timer, shift_timer_output_pin, idle_timer_output_pin);
+        }
 
         Ok(driver.build())
     }
 
-    fn get_shifter_id(&self, pin_pos: u8) -> u32 {
-        pin_pos as u32
+    fn get_shifter_id(pin_pos: u8) -> u8 {
+        pin_pos
     }
 
-    fn get_shifter_timer_id(&self, pin_pos: u8) -> u32 {
-        4 * (pin_pos as u32) + 0
+    fn get_shifter_timer_id(pin_pos: u8) -> u8 {
+        4 * pin_pos + 0
     }
-    fn get_low_bit_timer_id(&self, pin_pos: u8) -> u32 {
-        4 * (pin_pos as u32) + 1
+    fn get_low_bit_timer_id(pin_pos: u8) -> u8 {
+        4 * pin_pos + 1
     }
-    fn get_high_bit_timer_id(&self, pin_pos: u8) -> u32 {
-        4 * (pin_pos as u32) + 2
+    fn get_high_bit_timer_id(pin_pos: u8) -> u8 {
+        4 * pin_pos + 2
     }
-    fn get_idle_timer_id(&self, pin_pos: u8) -> u32 {
-        4 * (pin_pos as u32) + 3
+    fn get_idle_timer_id(pin_pos: u8) -> u8 {
+        4 * pin_pos + 3
     }
 
     fn shift_buffer_empty(&self, pin_pos: u8) -> bool {
-        let mask = 1u32 << self.get_shifter_id(pin_pos);
+        let mask = 1u32 << Self::get_shifter_id(pin_pos);
         let result = (ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) & mask) != 0;
-        //log::info!("shift_buffer_empty({}) -> {:?}", pin_pos, result);
+        log::info!("shift_buffer_empty({}) -> {:?}", pin_pos, result);
         result
     }
 
     fn fill_shift_buffer(&self, pin_pos: u8, data: u32) {
-        //log::info!("fill_shift_buffer({}, {})", pin_pos, data);
-        let buf_id = self.get_shifter_id(pin_pos) as usize;
+        log::info!("fill_shift_buffer({}, {})", pin_pos, data);
+        let buf_id = usize::from(Self::get_shifter_id(pin_pos));
 
         #[cfg(target_endian = "big")]
         ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[buf_id], data);
@@ -116,15 +145,15 @@ where
     }
 
     fn reset_idle_timer_finished_flag(&mut self, pin_pos: u8) {
-        //log::info!("reset_idle_timer_finished_flag({})", pin_pos);
-        let mask = 1u32 << self.get_idle_timer_id(pin_pos);
+        log::info!("reset_idle_timer_finished_flag({})", pin_pos);
+        let mask = 1u32 << Self::get_idle_timer_id(pin_pos);
         ral::write_reg!(ral::flexio, self.flexio, TIMSTAT, mask);
     }
 
     fn idle_timer_finished(&mut self, pin_pos: u8) -> bool {
-        let mask = 1u32 << self.get_idle_timer_id(pin_pos);
+        let mask = 1u32 << Self::get_idle_timer_id(pin_pos);
         let result = (ral::read_reg!(ral::flexio, self.flexio, TIMSTAT) & mask) != 0;
-        //log::info!("idle_timer_finished({}) -> {:?}", pin_pos, result);
+        log::info!("idle_timer_finished({}) -> {:?}", pin_pos, result);
         result
     }
 
@@ -135,6 +164,8 @@ where
     /// If you only want to send data to some pins, set the other data streams to `None`.
     pub fn write(&mut self, data: [Option<&dyn PreparedPixelsRef>; L]) {
         let mut data_streams = data.map(|d| d.map(|d| d.get_dma_buffer()));
+
+        log::info!("Writing:\n{:#x?}", data_streams);
 
         // Wait for the buffer to idle and clear timer overflow flag
         for i in data_streams
