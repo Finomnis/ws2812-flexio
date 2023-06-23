@@ -57,12 +57,12 @@ where
             ral::flexio,
             self.flexio,
             SHIFTCTL[usize::from(shifter_id)],
-            TIMSEL: u32::from(input_timer), // Use timer 0 for our clock input
-            TIMPOL: TIMPOL_0,               // Shift on positive edge of the timer
-            PINCFG: PINCFG_3,               // Output to a pin. TODO: only output to high-bit timer
-            PINSEL: u32::from(output_pin),  // Output pin
-            PINPOL: PINPOL_0,               // Pin polarity
-            SMOD: SMOD_2,                   // Transmit mode
+            TIMSEL: u32::from(input_timer),
+            TIMPOL: TIMPOL_0,              // Shift on positive edge of the timer
+            PINCFG: PINCFG_3,              // Output to a pin.
+            PINSEL: u32::from(output_pin), // Output pin
+            PINPOL: PINPOL_0,              // Pin polarity
+            SMOD: SMOD_2,                  // Transmit mode
         );
         ral::write_reg!(ral::flexio, self.flexio, SHIFTCFG[usize::from(shifter_id)],
             PWIDTH: 0, // Single bit shift-width
