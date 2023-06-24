@@ -3,7 +3,7 @@ use super::Pixel;
 /// A buffer that prepares pixel data for FlexIO usage.
 #[derive(Debug)]
 #[repr(C, align(4))]
-pub struct PreparedPixels<const N: usize, const P: usize> {
+pub struct PreparedPixels<const N: usize, const P: usize = 3> {
     // Start with a `u32`, for 32bit alignment
     len: u32,
     // The data. Would ideally be `[u32; P*N/4]`, but const expressions aren't there yet.
@@ -31,7 +31,7 @@ impl<const N: usize, const P: usize> PreparedPixels<N, P> {
     }
 
     /// Prepares a set of pixels for transmission to the LED strip.
-    pub fn prepare_pixels<T: Pixel<P>>(&mut self, pixels: impl Iterator<Item = T>) {
+    pub fn prepare_pixels<T: Pixel<P>>(&mut self, pixels: impl IntoIterator<Item = T>) {
         let mut len: usize = 0;
         for (d, pixel) in self.data.iter_mut().zip(pixels) {
             *d = pixel.get_ws2812_bytes();

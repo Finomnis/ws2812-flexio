@@ -8,6 +8,8 @@
 #![no_std]
 #![no_main]
 
+use palette::LinSrgb;
+use palette::Srgb;
 use teensy4_bsp as bsp;
 
 use bsp::board;
@@ -15,7 +17,13 @@ use bsp::hal;
 use bsp::ral;
 
 mod common;
-use common::{uart_log, UartWriter};
+use common::{
+    effects,
+    uart::{uart_log, UartWriter},
+};
+use ws2812_flexio::PreparedPixels;
+
+const NUM_PIXELS: usize = 332;
 
 #[bsp::rt::entry]
 fn main() -> ! {
@@ -56,20 +64,6 @@ fn main() -> ! {
     let time_us = move || us_timer.count();
     log::debug!("Timer initialized.");
 
-    let mut prepared_pixels1 = ws2812_flexio::PreparedPixels::<332, 3>::new();
-    let mut prepared_pixels2 = ws2812_flexio::PreparedPixels::<332, 3>::new();
-
-    let mut pixels = core::iter::from_fn({
-        let mut pos = 0;
-        move || {
-            let p = pos as u32;
-            pos = u32::from((pos + 1) as u8);
-            Some([(3 * p) as u8, (3 * p + 1) as u8, (3 * p + 2) as u8])
-        }
-    });
-    prepared_pixels1.prepare_pixels(&mut pixels);
-    prepared_pixels2.prepare_pixels(&mut pixels);
-
     // Ws2812 driver
     log::info!("Initializing FlexIO ...");
     // Set FlexIO clock to 16Mhz, as required by the driver
@@ -84,20 +78,44 @@ fn main() -> ! {
         ws2812_flexio::flexio::Ws2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7)).unwrap();
     log::debug!("FlexIO initialized.");
 
-    log::info!("Performing neopixel write ...");
-    for _ in 0..100 {
-        neopixel.write([Some(&prepared_pixels1), Some(&prepared_pixels2)]);
-    }
-    log::debug!("Write done.");
+    let mut framebuffer_0 = [Srgb::new(0., 0., 0.); NUM_PIXELS];
+    let mut framebuffer_1 = [Srgb::new(0., 0., 0.); NUM_PIXELS];
 
-    // Blink with a cycle length of 2 seconds, to make it verifyable that
-    // our timer runs at the correct speed.
+    let mut prepared_pixels_0 = PreparedPixels::<NUM_PIXELS>::new();
+    let mut prepared_pixels_1 = PreparedPixels::<NUM_PIXELS>::new();
+
+    let mut t = 0;
+
+    let mut t_last = time_us() as i32;
+
     loop {
-        let time_s = time_us() / 1_000_000;
-        if time_s % 2 == 0 {
-            led.set();
-        } else {
-            led.clear();
+        effects::running_dots(t, &mut framebuffer_0);
+        effects::rainbow(t, &mut framebuffer_1);
+        t += 1;
+
+        prepared_pixels_0.prepare_pixels(framebuffer_0.iter().map(|srgb| {
+            let linear: LinSrgb<u8> = srgb.into_linear().into_format();
+            linear
+        }));
+
+        prepared_pixels_1.prepare_pixels(framebuffer_1.iter().map(|srgb| {
+            let linear: LinSrgb<u8> = srgb.into_linear().into_format();
+            linear
+        }));
+
+        neopixel.write([Some(&prepared_pixels_0), Some(&prepared_pixels_1)]);
+
+        led.toggle();
+
+        if (t % 100) == 0 {
+            let t_now = time_us() as i32;
+            let t_diff = (t_now).wrapping_sub(t_last);
+            t_last = t_now;
+
+            let t_diff = (t_diff as f32) / 1_000_000.0;
+            let fps = 100.0 / t_diff;
+
+            log::info!("Frames: {}, FPS: {:.02}", t, fps);
         }
     }
 }
