@@ -7,12 +7,9 @@
     "rust-analyzer.check.extraArgs": [
         "--bins",
         "--examples",
-        "--lib",
     ],
     "rust-analyzer.linkedProjects": [
         "Cargo.toml",
     ],
-    "rust-analyzer.check.features": [
-        "palette,smart-leds-trait"
-    ],
+    "rust-analyzer.check.features": [],
 }
