@@ -10,6 +10,12 @@ default = []
 smart-leds-trait = ["dep:smart-leds-trait"]
 palette = ["dep:palette"]
 
+
+[[example]]
+name = "dual_320"
+required-features = ["palette"]
+
+
 [dependencies]
 imxrt-hal = "0.5.2"
 imxrt-ral = "0.5.0"
