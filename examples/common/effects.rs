@@ -2,7 +2,7 @@ use core::ops::Rem;
 
 use palette::{Hsv, IntoColor, Srgb};
 
-const DOT_DISTANCE: u32 = 10;
+const DOT_DISTANCE: u32 = 25;
 
 pub fn running_dots(t: u32, pixels: &mut [Srgb<f32>]) {
     for (pixel_pos, pixel_data) in pixels.iter_mut().enumerate() {
