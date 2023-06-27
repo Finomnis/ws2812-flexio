@@ -5,6 +5,7 @@ use ral::{flexio, Valid};
 mod dma;
 mod driver;
 mod driver_builder;
+mod driver_dma;
 /// Errors the driver can cause
 pub mod errors;
 mod pins;

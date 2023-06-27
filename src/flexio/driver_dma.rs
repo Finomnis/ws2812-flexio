@@ -43,11 +43,11 @@ where
             return Err(errors::WS2812InitError::NotEnoughPins);
         }
 
-        if available_shifters < PINS::PIN_COUNT {
+        if available_shifters < 1 {
             return Err(errors::WS2812InitError::NotEnoughShifters);
         }
 
-        if available_timers < (PINS::PIN_COUNT * 4) {
+        if available_timers < (PINS::PIN_COUNT * 2 + 2) {
             return Err(errors::WS2812InitError::NotEnoughTimers);
         }
 
@@ -200,5 +200,78 @@ where
             while !self.shift_buffer_empty(pin_pos) {}
             while !self.idle_timer_finished(pin_pos) {}
         }
+    }
+
+    /// Writes pixels to an LED strip.
+    ///
+    /// The first data stream will be sent to the first pin in the pins tuple.
+    ///
+    /// If you only want to send data to some pins, set the other data streams to `None`.
+    pub fn write_dma<R, F>(
+        &mut self,
+        data: [Option<(&dyn PreparedPixelsRef, &mut hal::dma::channel::Channel, u32)>; L],
+        concurrent_action: F,
+    ) -> R
+    where
+        F: FnOnce() -> R,
+    {
+        let mut data_streams =
+            data.map(|d| d.map(|(data, dma, dma_signal)| (data.get_dma_buffer(), dma, dma_signal)));
+
+        // Wait for the buffer to idle and clear timer overflow flag
+        for i in data_streams
+            .iter()
+            .enumerate()
+            .filter_map(|(pos, d)| d.as_ref().map(|_| pos))
+        {
+            let pin_pos = i.try_into().unwrap();
+
+            while !self.shift_buffer_empty(pin_pos) {}
+            self.reset_idle_timer_finished_flag(pin_pos);
+        }
+
+        let flexio_reg = core::cell::RefCell::new(&mut self.flexio);
+
+        let mut destination = WS2812Dma::new(flexio_reg, 0, 1);
+
+        let result = if let Some((data_ref, channel, dma_signal)) = &mut data_streams[0] {
+            let write = core::pin::pin!(hal::dma::peripheral::write(
+                channel,
+                data_ref,
+                &mut destination,
+            ));
+
+            let mut write = cassette::Cassette::new(write);
+
+            let active = match write.poll_on() {
+                Some(e) => {
+                    e.unwrap();
+                    false
+                }
+                None => true,
+            };
+            let result = concurrent_action();
+            if active {
+                write.block_on().unwrap();
+            }
+
+            result
+        } else {
+            panic!();
+        };
+
+        // Wait for transfer finished
+        for i in data_streams
+            .iter()
+            .enumerate()
+            .filter_map(|(pos, d)| d.as_ref().map(|_| pos))
+        {
+            let pin_pos = i.try_into().unwrap();
+
+            while !self.shift_buffer_empty(pin_pos) {}
+            while !self.idle_timer_finished(pin_pos) {}
+        }
+
+        result
     }
 }

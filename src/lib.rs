@@ -4,9 +4,10 @@
 #![doc(issue_tracker_base_url = "https://github.com/Finomnis/ws2812-flexio/issues")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-/// FlexIO driver
-pub mod flexio;
+/// Blocking driver.
+pub mod blocking;
 
+/// FlexIO driver
 mod pixel;
 mod prepared_pixels;
 
