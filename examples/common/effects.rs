@@ -25,3 +25,13 @@ pub fn rainbow(t: u32, pixels: &mut [Srgb<f32>]) {
         *pixel_data = color.into_color();
     }
 }
+
+pub fn test_pattern(pixels: &mut [[u8; 3]]) {
+    let mut val = 1;
+    for pixel in pixels {
+        for ch in pixel {
+            *ch = val;
+            val += 1;
+        }
+    }
+}

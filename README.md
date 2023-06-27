@@ -23,8 +23,8 @@ The following software tools have to be installed:
 ## Run
 
 - Connect the Teensy to PC via USB cable.
-- Run `cargo run --release --example dual_332`.
+- Run `cargo run --release --example triple_332`.
 - Read the output of the examples on the Teensy's UART.
-- Pin 6 and Pin 7 output data for a NeoPixel RGB strip of length 332
+- Pin 6, 7 and 8 output data for NeoPixel RGB strips of length 332 each
   (for example [P/N: S010332ZA3SA8](https://www.ipixelleds.com/index.php?id=923)).
   Note that those pins are at 3.3V, and most NeoPixel LED strips require a 5V data signal, which means an external level shifter is required.

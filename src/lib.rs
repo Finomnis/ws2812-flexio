@@ -7,9 +7,12 @@
 /// Blocking driver.
 pub mod blocking;
 
-/// FlexIO driver
+mod flexio_configurator;
+mod pins;
 mod pixel;
-mod prepared_pixels;
 
+/// Possible errors that could happen.
+pub mod errors;
+
+pub use pins::Pins;
 pub use pixel::Pixel;
-pub use prepared_pixels::PreparedPixels;

@@ -2,15 +2,9 @@ use imxrt_ral as ral;
 
 use ral::{flexio, Valid};
 
-mod dma;
 mod driver;
-mod driver_builder;
-mod driver_dma;
-/// Errors the driver can cause
-pub mod errors;
-mod pins;
 
-pub use pins::Pins;
+use crate::Pins;
 
 /// A WS2812 Neopixel LED Strip driver based on the i.MX RT FlexIO module
 pub struct Ws2812Driver<const N: u8, const L: usize, PINS: Pins<N, L>>
