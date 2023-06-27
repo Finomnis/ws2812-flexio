@@ -2,6 +2,7 @@ use imxrt_ral as ral;
 
 use ral::{flexio, Valid};
 
+mod dma;
 mod driver;
 mod driver_builder;
 /// Errors the driver can cause
