@@ -23,7 +23,7 @@ The following software tools have to be installed:
 ## Run
 
 - Connect the Teensy to PC via USB cable.
-- Run `cargo run --release --example dual_320`.
+- Run `cargo run --release --example dual_332`.
 - Read the output of the examples on the Teensy's UART.
 - Pin 6 and Pin 7 output data for a NeoPixel RGB strip of length 332
   (for example [P/N: S010332ZA3SA8](https://www.ipixelleds.com/index.php?id=923)).

@@ -8,8 +8,6 @@
 #![no_std]
 #![no_main]
 
-use palette::LinSrgb;
-use palette::Srgb;
 use teensy4_bsp as bsp;
 
 use bsp::board;
@@ -22,6 +20,9 @@ use common::{
     uart::{uart_log, UartWriter},
 };
 use ws2812_flexio::PreparedPixels;
+
+use palette::LinSrgb;
+use palette::Srgb;
 
 const NUM_PIXELS: usize = 332;
 
