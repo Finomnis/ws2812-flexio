@@ -16,6 +16,8 @@ snafu = { version = "0.7.4", default-features = false }
 # Pixel types
 palette = { version = "0.7.2", default-features = false, features = ["libm"] }
 
+# Async reactor, for executing DMA actions
+cassette = "0.2.3"
 
 [dev-dependencies]
 

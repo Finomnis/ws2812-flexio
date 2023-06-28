@@ -19,12 +19,15 @@ use common::{
     effects,
     uart::{uart_log, UartWriter},
 };
-use ws2812_flexio::PreparedPixels;
 
 use palette::LinSrgb;
 use palette::Srgb;
 
 const NUM_PIXELS: usize = 332;
+
+fn linearize_color(col: &Srgb) -> LinSrgb<u8> {
+    col.into_linear().into_format()
+}
 
 #[bsp::rt::entry]
 fn main() -> ! {
@@ -76,35 +79,38 @@ fn main() -> ! {
         FLEXIO1_CLK_PODF: DIVIDE_6,
     );
     let mut neopixel =
-        ws2812_flexio::flexio::Ws2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7)).unwrap();
+        ws2812_flexio::blocking::WS2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7, pins.p8))
+            .unwrap();
     log::debug!("FlexIO initialized.");
 
     let mut framebuffer_0 = [Srgb::new(0., 0., 0.); NUM_PIXELS];
     let mut framebuffer_1 = [Srgb::new(0., 0., 0.); NUM_PIXELS];
-
-    let mut prepared_pixels_0 = PreparedPixels::<NUM_PIXELS>::new();
-    let mut prepared_pixels_1 = PreparedPixels::<NUM_PIXELS>::new();
+    let mut framebuffer_2 = [[0; 3]; NUM_PIXELS];
 
     let mut t = 0;
 
     let mut t_last = time_us() as i32;
 
     loop {
+        use ws2812_flexio::IntoPixelStream;
+
         effects::running_dots(t, &mut framebuffer_0);
         effects::rainbow(t, &mut framebuffer_1);
+        effects::test_pattern(&mut framebuffer_2);
+
         t += 1;
 
-        prepared_pixels_0.prepare_pixels(framebuffer_0.iter().map(|srgb| {
-            let linear: LinSrgb<u8> = srgb.into_linear().into_format();
-            linear
-        }));
-
-        prepared_pixels_1.prepare_pixels(framebuffer_1.iter().map(|srgb| {
-            let linear: LinSrgb<u8> = srgb.into_linear().into_format();
-            linear
-        }));
-
-        neopixel.write([Some(&prepared_pixels_0), Some(&prepared_pixels_1)]);
+        neopixel.write([
+            &mut framebuffer_0
+                .iter()
+                .map(linearize_color)
+                .into_pixel_stream(),
+            &mut framebuffer_1
+                .iter()
+                .map(linearize_color)
+                .into_pixel_stream(),
+            &mut framebuffer_2.into_pixel_stream(),
+        ]);
 
         led.toggle();
 

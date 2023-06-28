@@ -2,8 +2,6 @@ use imxrt_ral as ral;
 
 use ral::{flexio, Valid};
 
-use super::{Pins, Ws2812Driver};
-
 // A total cycle is 20 clock cycles. (16 MHz / 20 = 800 kHz)
 const CLOCK_DIVIDER: u8 = 10; // Timer toggles; meaning we need two cycles for one timer clock cycle, so this is half the total cycle length
 const LOW_BIT_CYCLES_ON: u8 = 5;
@@ -17,55 +15,48 @@ const LOW_BIT_CYCLES_OFF: u8 = CYCLE_LENGTH - LOW_BIT_CYCLES_ON;
 const HIGH_BIT_CYCLES_OFF: u8 = CYCLE_LENGTH - HIGH_BIT_CYCLES_ON;
 const LATCH_DELAY: u16 = CYCLE_LENGTH as u16 * LATCH_DELAY_PIXELS;
 
-pub struct DriverBuilder<const N: u8, const L: usize, PINS: Pins<N, L>>
+pub struct FlexIOConfigurator<const N: u8>
 where
     flexio::Instance<N>: Valid,
 {
     flexio: flexio::Instance<N>,
-    pins: PINS,
 }
 
-impl<const N: u8, const L: usize, PINS: Pins<N, L>> DriverBuilder<N, L, PINS>
+impl<const N: u8> FlexIOConfigurator<N>
 where
     flexio::Instance<N>: Valid,
 {
-    pub fn new(flexio: flexio::Instance<N>, mut pins: PINS) -> Self {
-        // Configure pins
-        pins.configure();
-
+    pub fn new(flexio: flexio::Instance<N>) -> Self {
         // Reset
         ral::write_reg!(ral::flexio, flexio, CTRL, SWRST: SWRST_1);
         assert!(ral::read_reg!(ral::flexio, flexio, CTRL, SWRST == SWRST_1));
         ral::write_reg!(ral::flexio, flexio, CTRL, SWRST: SWRST_0);
         while ral::read_reg!(ral::flexio, flexio, CTRL, SWRST == SWRST_1) {}
 
-        Self { flexio, pins }
+        Self { flexio }
     }
 
-    pub fn build(self) -> Ws2812Driver<N, L, PINS> {
+    pub fn finish(self) -> flexio::Instance<N> {
         // Enable
         ral::write_reg!(ral::flexio, self.flexio, CTRL, FLEXEN: FLEXEN_1);
 
-        Ws2812Driver {
-            flexio: self.flexio,
-            _pins: self.pins,
-        }
+        self.flexio
     }
 
-    pub fn configure_shifter(&mut self, shifter_id: u8, input_timer: u8, output_pin: u8) {
+    pub fn configure_shifter(&mut self, shifter_id: u8, input_timer: u8, output_start_pin: u8) {
         ral::write_reg!(
             ral::flexio,
             self.flexio,
             SHIFTCTL[usize::from(shifter_id)],
             TIMSEL: u32::from(input_timer),
-            TIMPOL: TIMPOL_0,              // Shift on positive edge of the timer
-            PINCFG: PINCFG_3,              // Output to a pin.
-            PINSEL: u32::from(output_pin), // Output pin
-            PINPOL: PINPOL_0,              // Pin polarity
-            SMOD: SMOD_2,                  // Transmit mode
+            TIMPOL: TIMPOL_0,                    // Shift on positive edge of the timer
+            PINCFG: PINCFG_3,                    // Output to a pin.
+            PINSEL: u32::from(output_start_pin), // Output start pin
+            PINPOL: PINPOL_0,                    // Pin polarity
+            SMOD: SMOD_2,                        // Transmit mode
         );
         ral::write_reg!(ral::flexio, self.flexio, SHIFTCFG[usize::from(shifter_id)],
-            PWIDTH: 0, // Single bit shift-width
+            PWIDTH: 3, // 4-bit shift-width
             INSRC: INSRC_0, // Input source; irrelevant for transmit mode
             SSTOP: SSTOP_0, // No stop bit
             SSTART: SSTART_1, // No start bit, load data on first shift
@@ -73,7 +64,10 @@ where
     }
 
     pub fn configure_shift_timer(&mut self, timer_id: u8, shifter_id: u8, output_pin: u8) {
-        const CYCLES_PER_SHIFTBUFFER: u32 = 32 * 2;
+        // 32 bits, and we need 2 cycles per bit.
+        // However, we shift out 4 bits per cycle,
+        // so it's 32*2/4 = 16.
+        const CYCLES_PER_SHIFTBUFFER: u32 = 16;
 
         ral::write_reg!(
             ral::flexio,
