@@ -22,7 +22,7 @@ More info can be found in the documentation of the [`palette`](https://docs.rs/p
 
   Example: For a strip with [332 SK6805 pixels](https://www.ipixelleds.com/index.php?id=923), we can achieve $100.000 / (332*3 + 30) = 97.5$ fps.
 
-  Be aware that this framerate is only realistic for the DMA based driver; at the blocking driver, additional time gets lost while the next frame gets computed.
+  Be aware that this framerate is only realistic for the DMA based writes; with blocking writes, additional time gets lost while the next frame gets computed.
 
 
 # Examples
