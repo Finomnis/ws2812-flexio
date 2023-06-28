@@ -15,6 +15,13 @@ where
     ///
     /// IMPORTANT! Make sure that the clock input of the FlexIO instance is at 16MHz
     /// prior to calling this function.
+    ///
+    /// Note that not all amounts of pins are always supported.
+    ///
+    /// The limiting factor is most likely the number of FlexIO timers;
+    /// we need 2 timers plus an additional two per pin.
+    ///
+    /// For example, if the FlexIO instance has 8 timers, it supports up to 3 pins.
     pub fn init(
         ccm: &mut ral::ccm::CCM,
         flexio: flexio::Instance<N>,
