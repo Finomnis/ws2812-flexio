@@ -38,6 +38,7 @@ fn main() -> ! {
         gpt1: mut us_timer,
         mut ccm,
         flexio2,
+        mut dma,
         ..
     } = board::t40(board::instances());
 
@@ -68,6 +69,9 @@ fn main() -> ! {
     let time_us = move || us_timer.count();
     log::debug!("Timer initialized.");
 
+    // Initialize DMA
+    let mut neopixel_dma = dma[0].take().unwrap();
+
     // Ws2812 driver
     log::info!("Initializing FlexIO ...");
     // Set FlexIO clock to 16Mhz, as required by the driver
@@ -86,6 +90,12 @@ fn main() -> ! {
     let mut framebuffer_1 = [Srgb::new(0., 0., 0.); NUM_PIXELS];
     let mut framebuffer_2 = [[0; 3]; NUM_PIXELS];
 
+    let mut buffers = (
+        ws2812_flexio::PreprocessedPixels::<NUM_PIXELS, 3>::new(),
+        ws2812_flexio::PreprocessedPixels::<NUM_PIXELS, 3>::new(),
+    );
+    let mut flip_buffers = false;
+
     let mut t = 0;
 
     let mut t_last = time_us() as i32;
@@ -93,35 +103,46 @@ fn main() -> ! {
     loop {
         use ws2812_flexio::IntoPixelStream;
 
-        effects::running_dots(t, &mut framebuffer_0);
-        effects::rainbow(t, &mut framebuffer_1);
-        effects::test_pattern(&mut framebuffer_2);
+        let (render_buffer, display_buffer) = if flip_buffers {
+            (&mut buffers.0, &buffers.1)
+        } else {
+            (&mut buffers.1, &buffers.0)
+        };
+        flip_buffers = !flip_buffers;
 
-        t += 1;
+        neopixel
+            .write_dma(display_buffer, &mut neopixel_dma, 1, || {
+                effects::running_dots(t, &mut framebuffer_0);
+                effects::rainbow(t, &mut framebuffer_1);
+                effects::test_pattern(&mut framebuffer_2);
 
-        neopixel.write([
-            &mut framebuffer_0
-                .iter()
-                .map(linearize_color)
-                .into_pixel_stream(),
-            &mut framebuffer_1
-                .iter()
-                .map(linearize_color)
-                .into_pixel_stream(),
-            &mut framebuffer_2.into_pixel_stream(),
-        ]);
+                t += 1;
 
-        led.toggle();
+                render_buffer.prepare_pixels([
+                    &mut framebuffer_0
+                        .iter()
+                        .map(linearize_color)
+                        .into_pixel_stream(),
+                    &mut framebuffer_1
+                        .iter()
+                        .map(linearize_color)
+                        .into_pixel_stream(),
+                    &mut framebuffer_2.into_pixel_stream(),
+                ]);
 
-        if (t % 100) == 0 {
-            let t_now = time_us() as i32;
-            let t_diff = (t_now).wrapping_sub(t_last);
-            t_last = t_now;
+                led.toggle();
 
-            let t_diff = (t_diff as f32) / 1_000_000.0;
-            let fps = 100.0 / t_diff;
+                if (t % 100) == 0 {
+                    let t_now = time_us() as i32;
+                    let t_diff = (t_now).wrapping_sub(t_last);
+                    t_last = t_now;
 
-            log::info!("Frames: {}, FPS: {:.02}", t, fps);
-        }
+                    let t_diff = (t_diff as f32) / 1_000_000.0;
+                    let fps = 100.0 / t_diff;
+
+                    log::info!("Frames: {}, FPS: {:.02}", t, fps);
+                }
+            })
+            .unwrap();
     }
 }
