@@ -1,4 +1,4 @@
-use crate::Pixel;
+use crate::pixel::Pixel;
 
 pub trait PixelStreamRef {
     fn next(&mut self) -> Option<u8>;

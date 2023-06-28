@@ -4,10 +4,10 @@ use imxrt_ral as ral;
 use hal::ccm::clock_gate;
 use ral::{flexio, Valid};
 
-use super::{interleaved_pixels::InterleavedPixels, Ws2812Driver};
+use super::{interleaved_pixels::InterleavedPixels, WS2812Driver};
 use crate::{errors, flexio_configurator::FlexIOConfigurator, pixelstream::PixelStreamRef, Pins};
 
-impl<const N: u8, const L: usize, PINS: Pins<N, L>> Ws2812Driver<N, L, PINS>
+impl<const N: u8, const L: usize, PINS: Pins<N, L>> WS2812Driver<N, L, PINS>
 where
     flexio::Instance<N>: Valid,
 {

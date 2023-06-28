@@ -1,38 +1,46 @@
 /// A pixel that can be rendered with this library.
 pub trait Pixel {
-    /// The return type of the bytes iter
+    /// The return type of the [into_ws2812_bytes()](Pixel::into_ws2812_bytes) function.
     type BytesIter: Iterator<Item = u8>;
 
     /// Return the raw bytes that should be sent to the LED strip.
     ///
-    /// IMPORTANT: Be aware that LED strips are GRB encoded.
+    /// IMPORTANT: Be aware that WS2812 strips are GRB encoded.
     fn into_ws2812_bytes(self) -> Self::BytesIter;
 }
 
-// Raw RGB data.
+/// Raw RGB data.
 impl Pixel for [u8; 3] {
-    type BytesIter = PixelBytes<3>;
+    type BytesIter = core::array::IntoIter<u8, 3>;
 
-    fn into_ws2812_bytes(self) -> PixelBytes<3> {
+    fn into_ws2812_bytes(self) -> Self::BytesIter {
         // Neopixel strips want GRB data
-        PixelBytes::new([self[1], self[0], self[2]])
+        [self[1], self[0], self[2]].into_iter()
     }
 }
 
-// Raw RGBW data.
+/// Raw RGBW data.
 impl Pixel for [u8; 4] {
-    type BytesIter = PixelBytes<4>;
+    type BytesIter = core::array::IntoIter<u8, 4>;
 
-    fn into_ws2812_bytes(self) -> PixelBytes<4> {
-        PixelBytes::new(self)
+    fn into_ws2812_bytes(self) -> Self::BytesIter {
+        self.into_iter()
     }
 }
 
+/// 8-bit Linear sRGB, which is the color space
+/// most NeoPixel strips are in.
+///
+/// Be aware that this differs from normal,
+/// gamma-corrected sRGB. A conversion has to take place.
+///
+/// More info can be found in the documentation of the
+/// [palette] crate.
 impl Pixel for palette::LinSrgb<u8> {
-    type BytesIter = PixelBytes<3>;
+    type BytesIter = core::array::IntoIter<u8, 3>;
 
-    fn into_ws2812_bytes(self) -> PixelBytes<3> {
-        PixelBytes::new([self.green, self.red, self.blue])
+    fn into_ws2812_bytes(self) -> Self::BytesIter {
+        [self.green, self.red, self.blue].into_iter()
     }
 }
 
@@ -43,30 +51,5 @@ where
     type BytesIter = <P as Pixel>::BytesIter;
     fn into_ws2812_bytes(self) -> Self::BytesIter {
         self.clone().into_ws2812_bytes()
-    }
-}
-
-/// An iterator over the WS2812 bytes of a pixel
-pub struct PixelBytes<const N: usize> {
-    data: [u8; N],
-    iter_pos: usize,
-}
-
-impl<const N: usize> PixelBytes<N> {
-    fn new(data: [u8; N]) -> Self {
-        Self { data, iter_pos: 0 }
-    }
-}
-
-impl<const N: usize> Iterator for PixelBytes<N> {
-    type Item = u8;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(item) = self.data.get(self.iter_pos) {
-            self.iter_pos += 1;
-            Some(*item)
-        } else {
-            None
-        }
     }
 }

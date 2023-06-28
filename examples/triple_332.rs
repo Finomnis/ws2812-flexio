@@ -79,7 +79,7 @@ fn main() -> ! {
         FLEXIO1_CLK_PODF: DIVIDE_6,
     );
     let mut neopixel =
-        ws2812_flexio::blocking::Ws2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7, pins.p8))
+        ws2812_flexio::blocking::WS2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7, pins.p8))
             .unwrap();
     log::debug!("FlexIO initialized.");
 
