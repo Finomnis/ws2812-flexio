@@ -4,7 +4,7 @@ use imxrt_ral as ral;
 use hal::ccm::clock_gate;
 use ral::{flexio, Valid};
 
-use super::Ws2812Driver;
+use super::{interleaved_pixels::InterleavedPixels, Ws2812Driver};
 use crate::{
     errors,
     flexio_configurator::DriverBuilder,
@@ -159,12 +159,7 @@ where
 
     fn fill_shift_buffer(&self, data: u32) {
         let buf_id = usize::from(Self::get_shifter_id());
-
-        #[cfg(target_endian = "big")]
         ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[buf_id], data);
-
-        #[cfg(target_endian = "little")]
-        ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBBS[buf_id], data);
     }
 
     fn reset_idle_timer_finished_flag(&mut self) {
@@ -187,48 +182,15 @@ where
         while !self.shift_buffer_empty() {}
         self.reset_idle_timer_finished_flag();
 
-        while let Some(d) = data[0].next() {
-            log::info!(" - {}", d);
+        // Write data
+        log::info!("Writing ...");
+        for elem in InterleavedPixels::new(data) {
+            //log::info!("  - {:08x}", elem);
+            self.fill_shift_buffer(elem);
+            while !self.shift_buffer_empty() {}
         }
 
-        // // Write data, to all lanes simultaneously
-        // loop {
-        //     let mut data_left = false;
-
-        //     for (data_stream, pin_pos) in data_streams
-        //         .iter_mut()
-        //         .enumerate()
-        //         .filter_map(|(p, d)| d.as_mut().map(|d| (d, p)))
-        //     {
-        //         let pin_pos = pin_pos.try_into().unwrap();
-
-        //         if let Some((next_data_element, advanced_data_stream)) = data_stream.split_first() {
-        //             if self.shift_buffer_empty(pin_pos) {
-        //                 self.fill_shift_buffer(pin_pos, *next_data_element);
-        //                 *data_stream = advanced_data_stream;
-        //             }
-
-        //             if !data_stream.is_empty() {
-        //                 data_left = true;
-        //             }
-        //         }
-        //     }
-
-        //     if !data_left {
-        //         break;
-        //     }
-        // }
-
-        // // Wait for transfer finished
-        // for i in data_streams
-        //     .iter()
-        //     .enumerate()
-        //     .filter_map(|(pos, d)| d.map(|_| pos))
-        // {
-        //     let pin_pos = i.try_into().unwrap();
-
-        //     while !self.shift_buffer_empty(pin_pos) {}
-        //     while !self.idle_timer_finished(pin_pos) {}
-        // }
+        // Wait for transfer finished
+        while !self.idle_timer_finished() {}
     }
 }

@@ -3,6 +3,7 @@ use imxrt_ral as ral;
 use ral::{flexio, Valid};
 
 mod driver;
+mod interleaved_pixels;
 
 use crate::Pins;
 
