@@ -200,6 +200,10 @@ where
 
     /// Writes pixels to an LED strip.
     ///
+    /// In contrast to [`write()`](write), this one performs the actual copy
+    /// via DMA, whilst allowing for something else (like the next frame) to be
+    /// computed concurrently.
+    ///
     /// # Arguments
     ///
     /// * `data` - Preprocessed pixel data to send to the LED strips
