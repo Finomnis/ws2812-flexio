@@ -18,9 +18,7 @@ More info can be found in the documentation of the [`palette`](https://docs.rs/p
 
   The library drives the LED strips at 800kHz with a latch time of 300us. This gives us the following formula:
 
-  $$
-  fps = {100.000 \over {num\_pixels \times bytes\_per\_pixel + 30}}
-  $$
+  $$fps = {100.000 \over {num\_pixels \times bytes\_per\_pixel + 30}}$$
 
   Example: For a strip with [332 SK6805 pixels](https://www.ipixelleds.com/index.php?id=923), we can achieve $100.000 / (332*3 + 30) = 97.5$ fps.
 
