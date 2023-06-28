@@ -1,7 +1,7 @@
 use imxrt_hal::dma;
 use imxrt_ral::{flexio, write_reg};
 
-pub struct WS2812Dma<'a, const N: u8> {
+pub(crate) struct WS2812Dma<'a, const N: u8> {
     flexio: &'a mut flexio::Instance<N>,
     shifter_id: u8,
     dma_channel: u32,
