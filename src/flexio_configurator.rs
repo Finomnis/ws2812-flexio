@@ -15,14 +15,14 @@ const LOW_BIT_CYCLES_OFF: u8 = CYCLE_LENGTH - LOW_BIT_CYCLES_ON;
 const HIGH_BIT_CYCLES_OFF: u8 = CYCLE_LENGTH - HIGH_BIT_CYCLES_ON;
 const LATCH_DELAY: u16 = CYCLE_LENGTH as u16 * LATCH_DELAY_PIXELS;
 
-pub struct DriverBuilder<const N: u8>
+pub struct FlexIOConfigurator<const N: u8>
 where
     flexio::Instance<N>: Valid,
 {
     flexio: flexio::Instance<N>,
 }
 
-impl<const N: u8> DriverBuilder<N>
+impl<const N: u8> FlexIOConfigurator<N>
 where
     flexio::Instance<N>: Valid,
 {

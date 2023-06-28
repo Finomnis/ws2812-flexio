@@ -5,7 +5,7 @@ use hal::ccm::clock_gate;
 use ral::{flexio, Valid};
 
 use super::{interleaved_pixels::InterleavedPixels, Ws2812Driver};
-use crate::{errors, flexio_configurator::DriverBuilder, pixelstream::PixelStreamRef, Pins};
+use crate::{errors, flexio_configurator::FlexIOConfigurator, pixelstream::PixelStreamRef, Pins};
 
 impl<const N: u8, const L: usize, PINS: Pins<N, L>> Ws2812Driver<N, L, PINS>
 where
@@ -51,7 +51,7 @@ where
         }
 
         //////////// Configure FlexIO registers /////////////////
-        let mut driver = DriverBuilder::new(flexio);
+        let mut flexio = FlexIOConfigurator::new(flexio);
 
         // Find 4 consecutive pins for the shifter output
         let shifter_output_start_pin = {
@@ -98,9 +98,9 @@ where
         let shifter_timer = Self::get_shifter_timer_id();
         let idle_timer = Self::get_idle_timer_id();
 
-        driver.configure_shifter(data_shifter, shifter_timer, shifter_output_start_pin);
-        driver.configure_shift_timer(shifter_timer, data_shifter, shift_timer_output_pin);
-        driver.configure_idle_timer(idle_timer, shift_timer_output_pin, None);
+        flexio.configure_shifter(data_shifter, shifter_timer, shifter_output_start_pin);
+        flexio.configure_shift_timer(shifter_timer, data_shifter, shift_timer_output_pin);
+        flexio.configure_idle_timer(idle_timer, shift_timer_output_pin, None);
 
         for (pin_pos, pin_id) in PINS::FLEXIO_PIN_OFFSETS.iter().copied().enumerate() {
             let pin_pos = pin_pos.try_into().unwrap();
@@ -109,12 +109,12 @@ where
 
             let neopixel_output_pin = pin_id;
 
-            driver.configure_low_bit_timer(
+            flexio.configure_low_bit_timer(
                 low_bit_timer,
                 shift_timer_output_pin,
                 neopixel_output_pin,
             );
-            driver.configure_high_bit_timer(
+            flexio.configure_high_bit_timer(
                 high_bit_timer,
                 shifter_output_start_pin + pin_pos,
                 neopixel_output_pin,
@@ -125,7 +125,7 @@ where
         pins.configure();
         Ok(Self {
             _pins: pins,
-            flexio: driver.finish(),
+            flexio: flexio.finish(),
         })
     }
 
