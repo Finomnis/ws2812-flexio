@@ -63,7 +63,7 @@ fn main() -> ! {
     writeln!(uart);
 
     // Write welcome message
-    writeln!(uart, "===== WS2812 Rainbow Example =====");
+    writeln!(uart, "===== WS2812 Rainbow Example (with DMA!) =====");
     writeln!(uart);
 
     // Initialize logging
