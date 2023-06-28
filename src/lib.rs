@@ -10,9 +10,11 @@ pub mod blocking;
 mod flexio_configurator;
 mod pins;
 mod pixel;
+mod pixelstream;
 
 /// Possible errors that could happen.
 pub mod errors;
 
 pub use pins::Pins;
-pub use pixel::Pixel;
+pub use pixel::{Pixel, PixelBytes};
+use pixelstream::PixelStream;

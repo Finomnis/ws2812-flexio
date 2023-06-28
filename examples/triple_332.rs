@@ -98,8 +98,8 @@ fn main() -> ! {
         t += 1;
 
         neopixel.write([
-            framebuffer_0.iter().map(linearize_color),
-            framebuffer_1.iter().map(linearize_color),
+            &framebuffer_0.iter().map(linearize_color),
+            &framebuffer_1.iter().map(linearize_color),
             &framebuffer_2,
         ]);
 
