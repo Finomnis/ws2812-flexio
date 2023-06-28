@@ -187,7 +187,9 @@ where
         while !self.shift_buffer_empty() {}
         self.reset_idle_timer_finished_flag();
 
-        data[0].next();
+        while let Some(d) = data[0].next() {
+            log::info!(" - {}", d);
+        }
 
         // // Write data, to all lanes simultaneously
         // loop {

@@ -31,7 +31,7 @@ pub fn test_pattern(pixels: &mut [[u8; 3]]) {
     for pixel in pixels {
         for ch in pixel {
             *ch = val;
-            val += 1;
+            val = val.wrapping_add(1);
         }
     }
 }

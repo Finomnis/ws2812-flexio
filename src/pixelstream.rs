@@ -10,15 +10,49 @@ where
     I: Iterator<Item = P>,
 {
     pixel_stream: I,
+    bytes_iter: Option<P::BytesIter>,
+    finished: bool,
 }
 
-impl<P, I> PixelStreamRef for PixelStream<P, I>
+impl<I, P> PixelStream<P, I>
+where
+    P: Pixel,
+    I: Iterator<Item = P>,
+{
+    fn new(pixel_stream: I) -> Self {
+        Self {
+            pixel_stream,
+            bytes_iter: None,
+            finished: false,
+        }
+    }
+}
+
+impl<I, P> PixelStreamRef for PixelStream<P, I>
 where
     P: Pixel,
     I: Iterator<Item = P>,
 {
     fn next(&mut self) -> Option<u8> {
-        todo!()
+        loop {
+            if self.finished {
+                return None;
+            }
+
+            if self.bytes_iter.is_none() {
+                self.bytes_iter = self.pixel_stream.next().map(|p| p.get_ws2812_bytes());
+            }
+
+            if let Some(bytes_iter) = self.bytes_iter.as_mut() {
+                if let Some(byte) = bytes_iter.next() {
+                    return Some(byte);
+                } else {
+                    self.bytes_iter = None;
+                }
+            } else {
+                self.finished = true;
+            }
+        }
     }
 }
 
@@ -42,9 +76,6 @@ where
     type PixelIter = <T as IntoIterator>::IntoIter;
 
     fn into_pixel_stream(self) -> PixelStream<Self::Pixel, Self::PixelIter> {
-        todo!();
-        // PixelStream {
-        //     pixel_stream: self.into_iter().map(Pixel::get_ws2812_bytes).flatten(),
-        // }
+        PixelStream::new(self.into_iter())
     }
 }
