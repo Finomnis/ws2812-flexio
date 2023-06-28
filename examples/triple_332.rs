@@ -23,7 +23,7 @@ use common::{
 use palette::LinSrgb;
 use palette::Srgb;
 
-const NUM_PIXELS: usize = 5;
+const NUM_PIXELS: usize = 332;
 
 fn linearize_color(col: &Srgb) -> LinSrgb<u8> {
     col.into_linear().into_format()

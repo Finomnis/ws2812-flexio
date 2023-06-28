@@ -5,12 +5,7 @@ use hal::ccm::clock_gate;
 use ral::{flexio, Valid};
 
 use super::{interleaved_pixels::InterleavedPixels, Ws2812Driver};
-use crate::{
-    errors,
-    flexio_configurator::DriverBuilder,
-    pixelstream::{PixelStream, PixelStreamRef},
-    IntoPixelStream, Pins, Pixel,
-};
+use crate::{errors, flexio_configurator::DriverBuilder, pixelstream::PixelStreamRef, Pins};
 
 impl<const N: u8, const L: usize, PINS: Pins<N, L>> Ws2812Driver<N, L, PINS>
 where
