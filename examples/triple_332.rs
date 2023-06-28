@@ -29,6 +29,11 @@ fn linearize_color(col: &Srgb) -> LinSrgb<u8> {
     col.into_linear().into_format()
 }
 
+// Allocate large buffers statically.
+static mut FRAMEBUFFER_0: [Srgb; NUM_PIXELS] = [Srgb::new(0., 0., 0.); NUM_PIXELS];
+static mut FRAMEBUFFER_1: [Srgb; NUM_PIXELS] = [Srgb::new(0., 0., 0.); NUM_PIXELS];
+static mut FRAMEBUFFER_2: [[u8; 3]; NUM_PIXELS] = [[0; 3]; NUM_PIXELS];
+
 #[bsp::rt::entry]
 fn main() -> ! {
     let board::Resources {
@@ -82,9 +87,9 @@ fn main() -> ! {
         ws2812_flexio::WS2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7, pins.p8)).unwrap();
     log::debug!("FlexIO initialized.");
 
-    let mut framebuffer_0 = [Srgb::new(0., 0., 0.); NUM_PIXELS];
-    let mut framebuffer_1 = [Srgb::new(0., 0., 0.); NUM_PIXELS];
-    let mut framebuffer_2 = [[0; 3]; NUM_PIXELS];
+    let framebuffer_0 = unsafe { &mut FRAMEBUFFER_0 };
+    let framebuffer_1 = unsafe { &mut FRAMEBUFFER_1 };
+    let framebuffer_2 = unsafe { &mut FRAMEBUFFER_2 };
 
     let mut t = 0;
 
@@ -93,9 +98,9 @@ fn main() -> ! {
     loop {
         use ws2812_flexio::IntoPixelStream;
 
-        effects::running_dots(t, &mut framebuffer_0);
-        effects::rainbow(t, &mut framebuffer_1);
-        effects::test_pattern(&mut framebuffer_2);
+        effects::running_dots(t, framebuffer_0);
+        effects::rainbow(t, framebuffer_1);
+        effects::test_pattern(framebuffer_2);
 
         t += 1;
 

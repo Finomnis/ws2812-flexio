@@ -28,7 +28,7 @@ pub struct PreprocessedPixels<const N: usize, const L: usize, const P: usize = 3
 
 impl<const N: usize, const L: usize, const P: usize> PreprocessedPixels<N, L, P> {
     /// Creates a new PreprocessedPixels buffer.
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             len: 0,
             data: [[0; P]; N],
