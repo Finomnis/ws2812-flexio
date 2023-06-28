@@ -6,14 +6,14 @@ pub trait Pixel {
     /// Return the raw bytes that should be sent to the LED strip.
     ///
     /// IMPORTANT: Be aware that LED strips are GRB encoded.
-    fn get_ws2812_bytes(self) -> Self::BytesIter;
+    fn into_ws2812_bytes(self) -> Self::BytesIter;
 }
 
 // Raw RGB data.
 impl Pixel for [u8; 3] {
     type BytesIter = PixelBytes<3>;
 
-    fn get_ws2812_bytes(self) -> PixelBytes<3> {
+    fn into_ws2812_bytes(self) -> PixelBytes<3> {
         // Neopixel strips want GRB data
         PixelBytes::new([self[1], self[0], self[2]])
     }
@@ -23,7 +23,7 @@ impl Pixel for [u8; 3] {
 impl Pixel for [u8; 4] {
     type BytesIter = PixelBytes<4>;
 
-    fn get_ws2812_bytes(self) -> PixelBytes<4> {
+    fn into_ws2812_bytes(self) -> PixelBytes<4> {
         PixelBytes::new(self)
     }
 }
@@ -31,18 +31,18 @@ impl Pixel for [u8; 4] {
 impl Pixel for palette::LinSrgb<u8> {
     type BytesIter = PixelBytes<3>;
 
-    fn get_ws2812_bytes(self) -> PixelBytes<3> {
+    fn into_ws2812_bytes(self) -> PixelBytes<3> {
         PixelBytes::new([self.green, self.red, self.blue])
     }
 }
 
 impl<'a, P> Pixel for &'a P
 where
-    P: Pixel,
+    P: Pixel + Clone,
 {
     type BytesIter = <P as Pixel>::BytesIter;
-    fn get_ws2812_bytes(self) -> Self::BytesIter {
-        (*self).get_ws2812_bytes()
+    fn into_ws2812_bytes(self) -> Self::BytesIter {
+        self.clone().into_ws2812_bytes()
     }
 }
 

@@ -40,7 +40,7 @@ where
             }
 
             if self.bytes_iter.is_none() {
-                self.bytes_iter = self.pixel_stream.next().map(|p| p.get_ws2812_bytes());
+                self.bytes_iter = self.pixel_stream.next().map(|p| p.into_ws2812_bytes());
             }
 
             if let Some(bytes_iter) = self.bytes_iter.as_mut() {
