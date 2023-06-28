@@ -17,4 +17,4 @@ pub mod errors;
 
 pub use pins::Pins;
 pub use pixel::{Pixel, PixelBytes};
-use pixelstream::PixelStream;
+pub use pixelstream::IntoPixelStream;

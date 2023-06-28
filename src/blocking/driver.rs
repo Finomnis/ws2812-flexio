@@ -6,8 +6,10 @@ use ral::{flexio, Valid};
 
 use super::Ws2812Driver;
 use crate::{
-    errors, flexio_configurator::DriverBuilder, pixelstream::IntoPixelStream, Pins, Pixel,
-    PixelStream,
+    errors,
+    flexio_configurator::DriverBuilder,
+    pixelstream::{PixelStream, PixelStreamRef},
+    IntoPixelStream, Pins, Pixel,
 };
 
 impl<const N: u8, const L: usize, PINS: Pins<N, L>> Ws2812Driver<N, L, PINS>
@@ -180,10 +182,12 @@ where
     /// The first data stream will be sent to the first pin in the pins tuple.
     ///
     /// If you only want to send data to some pins, set the other data streams to `None`.
-    pub fn write(&mut self, data: [&dyn IntoPixelStream; L]) {
+    pub fn write(&mut self, data: [&mut dyn PixelStreamRef; L]) {
         // Wait for the buffer to idle and clear timer overflow flag
         while !self.shift_buffer_empty() {}
         self.reset_idle_timer_finished_flag();
+
+        data[0].next();
 
         // // Write data, to all lanes simultaneously
         // loop {

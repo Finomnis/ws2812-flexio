@@ -92,15 +92,23 @@ fn main() -> ! {
     let mut t_last = time_us() as i32;
 
     loop {
+        use ws2812_flexio::IntoPixelStream;
+
         effects::running_dots(t, &mut framebuffer_0);
         effects::rainbow(t, &mut framebuffer_1);
         effects::test_pattern(&mut framebuffer_2);
         t += 1;
 
         neopixel.write([
-            &framebuffer_0.iter().map(linearize_color),
-            &framebuffer_1.iter().map(linearize_color),
-            &framebuffer_2,
+            &mut framebuffer_0
+                .iter()
+                .map(linearize_color)
+                .into_pixel_stream(),
+            &mut framebuffer_1
+                .iter()
+                .map(linearize_color)
+                .into_pixel_stream(),
+            &mut framebuffer_2.into_pixel_stream(),
         ]);
 
         led.toggle();
