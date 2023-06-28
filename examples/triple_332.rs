@@ -83,11 +83,8 @@ fn main() -> ! {
             .unwrap();
     log::debug!("FlexIO initialized.");
 
-    // let mut framebuffer_0 = [Srgb::new(0., 0., 0.); NUM_PIXELS];
-    // let mut framebuffer_1 = [Srgb::new(0., 0., 0.); NUM_PIXELS];
-    // let mut framebuffer_2 = [[0; 3]; NUM_PIXELS];
-    let mut framebuffer_0 = [[0; 3]; NUM_PIXELS];
-    let mut framebuffer_1 = [[0; 3]; NUM_PIXELS];
+    let mut framebuffer_0 = [Srgb::new(0., 0., 0.); NUM_PIXELS];
+    let mut framebuffer_1 = [Srgb::new(0., 0., 0.); NUM_PIXELS];
     let mut framebuffer_2 = [[0; 3]; NUM_PIXELS];
 
     let mut t = 0;
@@ -97,26 +94,21 @@ fn main() -> ! {
     loop {
         use ws2812_flexio::IntoPixelStream;
 
-        framebuffer_0.fill([1, 2, 3]);
-        framebuffer_1.fill([4, 5, 6]);
-        framebuffer_2.fill([50, 100, 150]);
+        effects::running_dots(t, &mut framebuffer_0);
+        effects::rainbow(t, &mut framebuffer_1);
+        effects::test_pattern(&mut framebuffer_2);
 
-        // effects::running_dots(t, &mut framebuffer_0);
-        // effects::rainbow(t, &mut framebuffer_1);
-        // effects::test_pattern(&mut framebuffer_2);
         t += 1;
 
         neopixel.write([
-            // &mut framebuffer_0
-            //     .iter()
-            //     .map(linearize_color)
-            //     .into_pixel_stream(),
-            // &mut framebuffer_1
-            //     .iter()
-            //     .map(linearize_color)
-            //     .into_pixel_stream(),
-            &mut framebuffer_0.into_pixel_stream(),
-            &mut framebuffer_1.into_pixel_stream(),
+            &mut framebuffer_0
+                .iter()
+                .map(linearize_color)
+                .into_pixel_stream(),
+            &mut framebuffer_1
+                .iter()
+                .map(linearize_color)
+                .into_pixel_stream(),
             &mut framebuffer_2.into_pixel_stream(),
         ]);
 
@@ -132,7 +124,5 @@ fn main() -> ! {
 
             log::info!("Frames: {}, FPS: {:.02}", t, fps);
         }
-
-        loop {}
     }
 }

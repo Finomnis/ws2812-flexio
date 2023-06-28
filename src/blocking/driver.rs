@@ -174,18 +174,18 @@ where
 
     /// Writes pixels to an LED strip.
     ///
-    /// The first data stream will be sent to the first pin in the pins tuple.
+    /// If the strips are of different length, the shorter ones will be padded
+    /// with `0` to match the longest strip.
     ///
-    /// If you only want to send data to some pins, set the other data streams to `None`.
+    /// For technical reasons, an additional `[0, 0, 0]` pixel will be added at
+    /// the of the transmission.
     pub fn write(&mut self, data: [&mut dyn PixelStreamRef; L]) {
         // Wait for the buffer to idle and clear timer overflow flag
         while !self.shift_buffer_empty() {}
         self.reset_idle_timer_finished_flag();
 
         // Write data
-        log::info!("Writing ...");
         for elem in InterleavedPixels::new(data) {
-            //log::info!("  - {:08x}", elem);
             self.fill_shift_buffer(elem);
             while !self.shift_buffer_empty() {}
         }
