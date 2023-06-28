@@ -17,9 +17,8 @@ where
     /// prior to calling this function.
     ///
     /// Note that not all amounts of pins are always supported.
-    ///
     /// The limiting factor is most likely the number of FlexIO timers;
-    /// we need 2 timers plus an additional two per pin.
+    /// we need two timers plus an additional two per pin.
     ///
     /// For example, if the FlexIO instance has 8 timers, it supports up to 3 pins.
     pub fn init(
@@ -47,7 +46,7 @@ where
         log::debug!("        {} pins", available_pins);
         log::debug!("        {} timers", available_timers);
         log::debug!("        {} shifters", available_shifters);
-        log::debug!("Pin Offsets: {:?}", PINS::FLEXIO_PIN_OFFSETS);
+        log::debug!("Output pins: {:?}", PINS::FLEXIO_PIN_OFFSETS);
 
         if available_shifters < 1 {
             return Err(errors::WS2812InitError::NotEnoughShifters);
