@@ -53,8 +53,7 @@ impl<const N: usize, const L: usize, const P: usize> PreprocessedPixels<N, L, P>
 
     pub(crate) fn get_dma_data(&self) -> &[u32] {
         let ptr = self.data.as_ptr().cast();
-
-        let len = (N * P).min(self.len as usize) + P;
+        let len = (P * N).min(self.len as usize) + P;
 
         /* SAFETY
             Our data is contiguous, so we can cast freely between [[u32;X];Y] and [u32;X*Y].
