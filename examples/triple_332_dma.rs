@@ -136,25 +136,6 @@ fn main() -> ! {
     let mut t_last = time_us() as i32;
 
     loop {
-        // If we are at the very first frame, we need to render here.
-        // Otherwise, because we use double buffering, we would
-        // display an empty frame while rendering the first actual frame.
-        if t == 0 {
-            let render_buffer = if flip_buffers {
-                &mut buffers.1
-            } else {
-                &mut buffers.0
-            };
-
-            render_frame(
-                t,
-                framebuffer_0,
-                framebuffer_1,
-                framebuffer_2,
-                render_buffer,
-            );
-        }
-
         let (render_buffer, display_buffer) = if flip_buffers {
             (&mut buffers.0, &buffers.1)
         } else {
@@ -162,7 +143,7 @@ fn main() -> ! {
         };
         flip_buffers = !flip_buffers;
 
-        neopixel
+        let lagged = neopixel
             .write_dma(display_buffer, &mut neopixel_dma, 1, || {
                 t += 1;
 
@@ -187,6 +168,21 @@ fn main() -> ! {
                     log::info!("Frames: {}, FPS: {:.02}", t, fps);
                 }
             })
-            .unwrap();
+            .unwrap()
+            .lagged;
+
+        if lagged {
+            // Note that with the current implementation of this
+            // example, it is expected that the first frame lags.
+            // Reason is that we use double buffering, and while
+            // rendering the first frame, the other buffer will get
+            // displayed, which is empty. And displaying an empty
+            // buffer is really fast.
+            //
+            // This could be fixed by pre-rendering the first frame,
+            // but was left in here intentionally to demonstrate
+            // this feature.
+            log::warn!("Frame {} lagged.", t - 1);
+        }
     }
 }

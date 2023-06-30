@@ -6,7 +6,7 @@ use ral::{flexio, Valid};
 
 use super::{
     dma::WS2812Dma, flexio_configurator::FlexIOConfigurator, interleaved_pixels::InterleavedPixels,
-    PreprocessedPixels, WS2812Driver,
+    PreprocessedPixels, WS2812Driver, WriteDmaResult,
 };
 use crate::{errors, pixelstream::PixelStreamRef, Pins};
 
@@ -224,7 +224,7 @@ where
         dma: &mut hal::dma::channel::Channel,
         dma_signal_id: u32,
         concurrent_action: F,
-    ) -> Result<R, imxrt_hal::dma::Error>
+    ) -> Result<WriteDmaResult<R>, imxrt_hal::dma::Error>
     where
         F: FnOnce() -> R,
     {
@@ -240,17 +240,24 @@ where
             let write = core::pin::pin!(hal::dma::peripheral::write(dma, data, &mut destination));
 
             let mut write = cassette::Cassette::new(write);
-            let active = write.poll_on().transpose()?.is_none();
+            let mut active = write.poll_on().transpose()?.is_none();
 
             // Execute function
             let result = concurrent_action();
 
             // Finish write
             if active {
+                // Query once to find out if we potentially lagged
+                active = write.poll_on().transpose()?.is_none();
+            }
+            if active {
                 write.block_on()?;
             }
 
-            result
+            WriteDmaResult {
+                result,
+                lagged: !active,
+            }
         };
 
         // Wait for transfer finished
