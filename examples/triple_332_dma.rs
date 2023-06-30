@@ -41,6 +41,32 @@ static mut BUFFERS: (
     ws2812_flexio::PreprocessedPixels::new(),
 );
 
+fn render_frame(
+    t: u32,
+    framebuffer_0: &mut [Srgb],
+    framebuffer_1: &mut [Srgb],
+    framebuffer_2: &mut [[u8; 3]],
+    render_buffer: &mut ws2812_flexio::PreprocessedPixels<NUM_PIXELS, 3>,
+) {
+    use ws2812_flexio::IntoPixelStream;
+
+    effects::running_dots(t, framebuffer_0);
+    effects::rainbow(t, framebuffer_1);
+    effects::test_pattern(framebuffer_2);
+
+    render_buffer.prepare_pixels([
+        &mut framebuffer_0
+            .iter()
+            .map(linearize_color)
+            .into_pixel_stream(),
+        &mut framebuffer_1
+            .iter()
+            .map(linearize_color)
+            .into_pixel_stream(),
+        &mut framebuffer_2.into_pixel_stream(),
+    ]);
+}
+
 #[bsp::rt::entry]
 fn main() -> ! {
     let board::Resources {
@@ -110,7 +136,24 @@ fn main() -> ! {
     let mut t_last = time_us() as i32;
 
     loop {
-        use ws2812_flexio::IntoPixelStream;
+        // If we are at the very first frame, we need to render here.
+        // Otherwise, because we use double buffering, we would
+        // display an empty frame while rendering the first actual frame.
+        if t == 0 {
+            let render_buffer = if flip_buffers {
+                &mut buffers.1
+            } else {
+                &mut buffers.0
+            };
+
+            render_frame(
+                t,
+                framebuffer_0,
+                framebuffer_1,
+                framebuffer_2,
+                render_buffer,
+            );
+        }
 
         let (render_buffer, display_buffer) = if flip_buffers {
             (&mut buffers.0, &buffers.1)
@@ -121,23 +164,15 @@ fn main() -> ! {
 
         neopixel
             .write_dma(display_buffer, &mut neopixel_dma, 1, || {
-                effects::running_dots(t, framebuffer_0);
-                effects::rainbow(t, framebuffer_1);
-                effects::test_pattern(framebuffer_2);
-
                 t += 1;
 
-                render_buffer.prepare_pixels([
-                    &mut framebuffer_0
-                        .iter()
-                        .map(linearize_color)
-                        .into_pixel_stream(),
-                    &mut framebuffer_1
-                        .iter()
-                        .map(linearize_color)
-                        .into_pixel_stream(),
-                    &mut framebuffer_2.into_pixel_stream(),
-                ]);
+                render_frame(
+                    t,
+                    framebuffer_0,
+                    framebuffer_1,
+                    framebuffer_2,
+                    render_buffer,
+                );
 
                 led.toggle();
 
