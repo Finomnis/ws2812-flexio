@@ -10,19 +10,21 @@ More info can be found in the documentation of the [`palette`](https://docs.rs/p
 
 ## Specs
 
-- Parallel strips:
+### Parallel strips
 
   The library can drive multiple strips in parallel. To be more specific, driving multiple strips from the same FlexIO instance requires `2 + 2 * strips` FlexIO timers, so a for example a FlexIO instance with `8` timers can drive `3` strips in parallel.
 
-- Framerate:
+### Framerate
 
   The library drives the LED strips at 800kHz with a latch time of 300us. This gives us the following formula:
 
-  $$fps = {100.000 \over {num\_pixels \times bytes\_per\_pixel + 30}}$$
+  ```python
+  fps = 100.000 / (num_pixels x bytes_per_pixel + 30)
+  ```
 
-  Example: For a strip with [332 SK6805 pixels](https://www.ipixelleds.com/index.php?id=923), we can achieve $100.000 / (332*3 + 30) = 97.5$ fps.
+  Example: For a strip with [332 SK6805 pixels](https://www.ipixelleds.com/index.php?id=923), we can achieve `100.000 / (332*3 + 30) = 97.5` fps.
 
-  Be aware that this framerate is only realistic for the DMA based writes; with blocking writes, additional time gets lost while the next frame gets computed.
+  Be aware that this framerate is only realistic for DMA based writes; with blocking writes, additional time gets lost while the next frame gets computed.
 
 
 # Examples
