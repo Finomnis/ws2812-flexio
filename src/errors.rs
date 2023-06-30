@@ -1,6 +1,6 @@
 use snafu::prelude::*;
 
-/// Errors of the [WS2812Driver::init](crate::blocking::WS2812Driver::init) function
+/// Errors of the [WS2812Driver::init](crate::WS2812Driver::init) function
 #[derive(Debug, Snafu)]
 pub enum WS2812InitError {
     /// The peripheral does not have enough IO pins.

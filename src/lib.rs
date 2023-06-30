@@ -5,9 +5,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 /// Blocking driver.
-pub mod blocking;
-
-mod flexio_configurator;
+mod flexio;
 mod pins;
 mod pixel;
 mod pixelstream;
@@ -15,6 +13,7 @@ mod pixelstream;
 /// Possible errors that could happen.
 pub mod errors;
 
+pub use flexio::{PreprocessedPixels, WS2812Driver};
 pub use pins::Pins;
 pub use pixel::Pixel;
 pub use pixelstream::IntoPixelStream;
