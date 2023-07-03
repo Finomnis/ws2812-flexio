@@ -23,6 +23,8 @@ use common::{
 use palette::LinSrgb;
 use palette::Srgb;
 
+use ws2812_flexio::{IntoPixelStream, WS2812Driver};
+
 const NUM_PIXELS: usize = 332;
 
 fn linearize_color(col: &Srgb) -> LinSrgb<u8> {
@@ -41,7 +43,7 @@ fn main() -> ! {
         pins,
         lpuart6,
         gpt1: mut us_timer,
-        mut ccm,
+        ccm,
         flexio2,
         ..
     } = board::t40(board::instances());
@@ -80,11 +82,10 @@ fn main() -> ! {
         ral::ccm,
         ccm,
         CS1CDR,
-        FLEXIO1_CLK_PRED: FLEXIO1_CLK_PRED_4,
-        FLEXIO1_CLK_PODF: DIVIDE_6,
+        FLEXIO2_CLK_PRED: FLEXIO2_CLK_PRED_4,
+        FLEXIO2_CLK_PODF: DIVIDE_6,
     );
-    let mut neopixel =
-        ws2812_flexio::WS2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7, pins.p8)).unwrap();
+    let mut neopixel = WS2812Driver::init(flexio2, (pins.p6, pins.p7, pins.p8)).unwrap();
     log::debug!("FlexIO initialized.");
 
     let framebuffer_0 = unsafe { &mut FRAMEBUFFER_0 };
@@ -96,8 +97,6 @@ fn main() -> ! {
     let mut t_last = time_us() as i32;
 
     loop {
-        use ws2812_flexio::IntoPixelStream;
-
         effects::running_dots(t, framebuffer_0);
         effects::rainbow(t, framebuffer_1);
         effects::test_pattern(framebuffer_2);

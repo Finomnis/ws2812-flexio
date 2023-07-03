@@ -23,6 +23,8 @@ use common::{
 use palette::LinSrgb;
 use palette::Srgb;
 
+use ws2812_flexio::{IntoPixelStream, PreprocessedPixels, WS2812Driver};
+
 const NUM_PIXELS: usize = 332;
 
 fn linearize_color(col: &Srgb) -> LinSrgb<u8> {
@@ -34,22 +36,17 @@ static mut FRAMEBUFFER_0: [Srgb; NUM_PIXELS] = [Srgb::new(0., 0., 0.); NUM_PIXEL
 static mut FRAMEBUFFER_1: [Srgb; NUM_PIXELS] = [Srgb::new(0., 0., 0.); NUM_PIXELS];
 static mut FRAMEBUFFER_2: [[u8; 3]; NUM_PIXELS] = [[0; 3]; NUM_PIXELS];
 static mut BUFFERS: (
-    ws2812_flexio::PreprocessedPixels<NUM_PIXELS, 3>,
-    ws2812_flexio::PreprocessedPixels<NUM_PIXELS, 3>,
-) = (
-    ws2812_flexio::PreprocessedPixels::new(),
-    ws2812_flexio::PreprocessedPixels::new(),
-);
+    PreprocessedPixels<NUM_PIXELS, 3>,
+    PreprocessedPixels<NUM_PIXELS, 3>,
+) = (PreprocessedPixels::new(), PreprocessedPixels::new());
 
 fn render_frame(
     t: u32,
     framebuffer_0: &mut [Srgb],
     framebuffer_1: &mut [Srgb],
     framebuffer_2: &mut [[u8; 3]],
-    render_buffer: &mut ws2812_flexio::PreprocessedPixels<NUM_PIXELS, 3>,
+    render_buffer: &mut PreprocessedPixels<NUM_PIXELS, 3>,
 ) {
-    use ws2812_flexio::IntoPixelStream;
-
     effects::running_dots(t, framebuffer_0);
     effects::rainbow(t, framebuffer_1);
     effects::test_pattern(framebuffer_2);
@@ -74,7 +71,7 @@ fn main() -> ! {
         pins,
         lpuart6,
         gpt1: mut us_timer,
-        mut ccm,
+        ccm,
         flexio2,
         mut dma,
         ..
@@ -117,11 +114,10 @@ fn main() -> ! {
         ral::ccm,
         ccm,
         CS1CDR,
-        FLEXIO1_CLK_PRED: FLEXIO1_CLK_PRED_4,
-        FLEXIO1_CLK_PODF: DIVIDE_6,
+        FLEXIO2_CLK_PRED: FLEXIO2_CLK_PRED_4,
+        FLEXIO2_CLK_PODF: DIVIDE_6,
     );
-    let mut neopixel =
-        ws2812_flexio::WS2812Driver::init(&mut ccm, flexio2, (pins.p6, pins.p7, pins.p8)).unwrap();
+    let mut neopixel = WS2812Driver::init(flexio2, (pins.p6, pins.p7, pins.p8)).unwrap();
     log::debug!("FlexIO initialized.");
 
     let framebuffer_0 = unsafe { &mut FRAMEBUFFER_0 };

@@ -1,7 +1,6 @@
 use imxrt_hal as hal;
 use imxrt_ral as ral;
 
-use hal::ccm::clock_gate;
 use ral::{flexio, Valid};
 
 use super::{
@@ -25,13 +24,9 @@ where
     ///
     /// For example, if the FlexIO instance has 8 timers, it supports up to 3 pins.
     pub fn init(
-        ccm: &mut ral::ccm::CCM,
         flexio: flexio::Instance<N>,
         mut pins: PINS,
     ) -> Result<Self, errors::WS2812InitError> {
-        // Configure clocks
-        clock_gate::flexio::<N>().set(ccm, clock_gate::ON);
-
         // Parameter check
         let (version_major, version_minor, available_feature_set) =
             ral::read_reg!(ral::flexio, flexio, VERID, MAJOR, MINOR, FEATURE);
