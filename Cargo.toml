@@ -25,7 +25,7 @@ cortex-m = "0.7.7"
 embedded-hal = "0.2.7"
 
 # Board support package
-teensy4-bsp = { version = "0.4.2", features = ["rt"] }
+teensy4-bsp = { version = "0.4.3", features = ["rt"] }
 
 # Logging
 critical-section = "1.1.1"
@@ -33,11 +33,6 @@ critical-section = "1.1.1"
 # Packages necessary for board usage
 nb = "1.1.0"    # Async
 fugit = "0.3.6" # Time
-
-
-# For local development of imxrt-hal
-[patch.crates-io]
-teensy4-bsp = { git = "https://github.com/Finomnis/teensy4-rs.git", branch = "flexio" }
 
 # Allow docsrs options
 [package.metadata.docs.rs]
