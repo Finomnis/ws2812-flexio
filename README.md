@@ -8,6 +8,10 @@ The default color space of NeoPixel LED strips is 8-bit [linear sRGB](https://ma
 Be aware that this differs from normal, gamma corrected sRGB; a conversion has to take place.
 More info can be found in the documentation of the [`palette`](https://docs.rs/palette) crate.
 
+## Operating Modes
+
+This crate can operate either in blocking mode or in asynchronous DMA driven mode.
+
 ## Specs
 
 ### Parallel strips
