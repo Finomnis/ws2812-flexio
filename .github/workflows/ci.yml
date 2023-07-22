@@ -10,31 +10,8 @@ on:
 name: CI
 
 jobs:
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
-    strategy:
-      matrix:
-        target:
-          - aarch64-unknown-linux-gnu
-          - x86_64-pc-windows-gnu
-          - x86_64-unknown-linux-gnu
-          - thumbv7em-none-eabihf
-          - thumbv6m-none-eabi
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v3
-
-      - name: Install cross
-        uses: taiki-e/install-action@cross
-
-      - name: Build
-        run: cross build --all-features --release --target=${{ matrix.target }}
-
-  build_full:
-    name: Build examples and tests (on-target)
+  build_examples:
+    name: Build examples (on-target)
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: "-D warnings"
@@ -48,7 +25,24 @@ jobs:
           targets: thumbv7em-none-eabihf
 
       - name: Build
-        run: cargo build --all-features --all-targets --release
+        run: cargo build --all-features --examples
+
+  build_examples_release:
+    name: Build examples (on-target)
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf
+
+      - name: Build
+        run: cargo build --all-features --examples --release
 
   tests:
     name: Run tests (x86_64)
