@@ -1,4 +1,12 @@
 # ws2812-flexio
+
+[![Crates.io](https://img.shields.io/crates/v/ws2812-flexio)](https://crates.io/crates/ws2812-flexio)
+[![Crates.io](https://img.shields.io/crates/d/ws2812-flexio)](https://crates.io/crates/ws2812-flexio)
+[![License](https://img.shields.io/crates/l/ws2812-flexio)](https://github.com/Finomnis/ws2812-flexio/blob/main/LICENSE-MIT)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Finomnis/ws2812-flexio/ci.yml)](https://github.com/Finomnis/ws2812-flexio/actions/workflows/ci.yml?query=branch%3Amain)
+[![docs.rs](https://img.shields.io/docsrs/ws2812-flexio)](https://docs.rs/ws2812-flexio)
+
+
 A neopixel driver based on NXP i.MX RT's FlexIO bus.
 
 ## Pixel Type
