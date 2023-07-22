@@ -11,7 +11,7 @@ name: CI
 
 jobs:
   build_examples:
-    name: Build examples (on-target)
+    name: Build examples
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: "-D warnings"
@@ -28,7 +28,7 @@ jobs:
         run: cargo build --all-features --examples
 
   build_examples_release:
-    name: Build examples (on-target)
+    name: Build examples (release)
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: "-D warnings"
