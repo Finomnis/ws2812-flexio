@@ -10,7 +10,7 @@ description = "A neopixel driver based on NXP i.MX RT's FlexIO bus."
 keywords = ["ws2812", "neopixel", "flexio", "imxrt", "nxp"]
 categories = ["embedded", "no-std"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+exclude = ["/.gitignore", "/.github/", "/.vscode/"]
 
 [dependencies]
 imxrt-hal = "0.5.3"
