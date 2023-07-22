@@ -63,4 +63,4 @@ The following software tools have to be installed:
 - Read the output of the examples on the Teensy's UART.
 - Pin 6, 7 and 8 output data for NeoPixel RGB strips of length 332 each
   (for example [P/N: S010332ZA3SA8](https://www.ipixelleds.com/index.php?id=923)).
-  Note that those pins are at 3.3V, and most NeoPixel LED strips require a 5V data signal, which means an external level shifter is required.
+  Note that those pins output 3.3V, and most NeoPixel LED strips require a 5V data signal, which means an external level shifter is required.
