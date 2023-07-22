@@ -10,7 +10,7 @@ More info can be found in the documentation of the [`palette`](https://docs.rs/p
 
 ## Operating Modes
 
-This crate can operate either in blocking mode or in asynchronous DMA driven mode.
+This crate can operate either in blocking mode or in DMA driven asynchronous mode.
 
 ## Specs
 
