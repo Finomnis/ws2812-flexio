@@ -39,13 +39,11 @@ impl<const N: usize> Iterator for InterleavedPixels<'_, N> {
 
         if has_next_data {
             Some(next_data)
+        } else if self.leftover_trailing_bytes > 0 {
+            self.leftover_trailing_bytes -= 1;
+            Some(next_data)
         } else {
-            if self.leftover_trailing_bytes > 0 {
-                self.leftover_trailing_bytes -= 1;
-                Some(next_data)
-            } else {
-                None
-            }
+            None
         }
     }
 }

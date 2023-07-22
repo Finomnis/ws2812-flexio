@@ -1,0 +1,136 @@
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  release:
+    types: [published]
+
+name: CI
+
+jobs:
+  build_examples:
+    name: Build examples
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf
+
+      - name: Build
+        run: cargo build --all-features --examples
+
+  build_examples_release:
+    name: Build examples (release)
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf
+
+      - name: Build
+        run: cargo build --all-features --examples --release
+
+  tests:
+    name: Run tests (x86_64)
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Enable test harness
+        run: sed -i '/harness = false/c\#harness = false' Cargo.toml
+
+      - name: Run tests
+        run: cargo test --lib --all-features --target=x86_64-unknown-linux-gnu
+
+  lints:
+    name: Lints
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          targets: thumbv7em-none-eabihf
+
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Run cargo clippy
+        run: cargo clippy --all-features --examples -- -D warnings
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf
+
+      - name: Run cargo doc
+        env:
+          RUSTDOCFLAGS: "-Dwarnings"
+        run: cargo doc --no-deps --examples
+
+  release:
+    name: Publish version
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event_name == 'release'
+    needs: [build_examples, build_examples_release, tests, lints, docs]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf
+
+      - name: Query crate version
+        run: echo "crate_version=$(cargo metadata --format-version=1 --no-deps | python -c "import sys,json; print('v' + json.load(sys.stdin)['packages'][0]['version'])")" >> $GITHUB_ENV
+
+      - name: Query release tag version
+        run: echo "release_tag_version=${{ github.event.release.name }}" >> $GITHUB_ENV
+
+      - name: Print versions
+        run: echo "Crate - ${{ env.crate_version }}, Release - ${{ env.release_tag_version }}"
+
+      - name: Check version not empty
+        run: test -n ${{ env.crate_version }}
+
+      - name: Check matching versions
+        run: test ${{ env.crate_version }} = ${{ env.release_tag_version }}
+
+      - name: Cargo login
+        run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
+
+      - name: Cargo publish
+        run: cargo publish

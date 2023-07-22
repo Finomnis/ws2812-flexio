@@ -61,15 +61,13 @@ where
         let shifter_output_start_pin = {
             let mut start = 0;
             let mut found = false;
-            for i in 0..available_pins as u8 {
+            for i in 0..available_pins {
                 if PINS::FLEXIO_PIN_OFFSETS.contains(&i) {
                     start = i + 1;
-                } else {
-                    if i - start >= 3 {
-                        // We found 4 consecutive free pins!
-                        found = true;
-                        break;
-                    }
+                } else if i - start >= 3 {
+                    // We found 4 consecutive free pins!
+                    found = true;
+                    break;
                 }
             }
             if !found {
@@ -82,7 +80,7 @@ where
         let shift_timer_output_pin = {
             let mut found_pin = None;
 
-            for i in 0..available_pins as u8 {
+            for i in 0..available_pins {
                 if !PINS::FLEXIO_PIN_OFFSETS.contains(&i)
                     && !(shifter_output_start_pin..shifter_output_start_pin + 4).contains(&i)
                 {
