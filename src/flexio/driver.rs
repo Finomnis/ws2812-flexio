@@ -1,3 +1,5 @@
+use core::{future::Future, task::Poll};
+
 use imxrt_hal as hal;
 use imxrt_ral as ral;
 
@@ -211,7 +213,72 @@ where
     ///
     /// For technical reasons, an additional `[0, 0, 0]` pixel will be added at
     /// the of the transmission.
-    pub fn write_dma<F, R, const N2: usize, const P: usize>(
+    pub async fn write_dma<F, R, const N2: usize, const P: usize>(
+        &mut self,
+        data: &PreprocessedPixels<N2, L, P>,
+        dma: &mut hal::dma::channel::Channel,
+        dma_signal_id: u32,
+        concurrent_action: F,
+    ) -> Result<WriteDmaResult<R>, imxrt_hal::dma::Error>
+    where
+        F: Future<Output = R>,
+    {
+        // Wait for the buffer to idle and clear timer overflow flag
+        while !self.shift_buffer_empty() {
+            cassette::yield_now().await;
+        }
+        self.reset_idle_timer_finished_flag();
+
+        let result = {
+            // Write data
+            let data = data.get_dma_data();
+            let mut destination =
+                WS2812Dma::new(&mut self.flexio, Self::get_shifter_id(), dma_signal_id);
+            let mut write =
+                core::pin::pin!(hal::dma::peripheral::write(dma, data, &mut destination));
+
+            let mut dma_finished = false;
+            if let Poll::Ready(s) = futures::poll!(&mut write) {
+                s?;
+                dma_finished = true;
+            }
+
+            // Execute function
+            let result = concurrent_action.await;
+
+            // Finish write
+            if !dma_finished {
+                // Query once to find out if we potentially lagged
+                if let Poll::Ready(s) = futures::poll!(&mut write) {
+                    s?;
+                    dma_finished = true;
+                } else {
+                    write.await?;
+                }
+            }
+
+            WriteDmaResult {
+                result,
+                lagged: dma_finished,
+            }
+        };
+
+        // Wait for transfer finished
+        while !self.shift_buffer_empty() {
+            cassette::yield_now().await;
+        }
+        while !self.idle_timer_finished() {
+            cassette::yield_now().await;
+        }
+
+        Ok(result)
+    }
+
+    /// Same as [`write_dma()`](write_dma), but blocks until completion.
+    ///
+    /// Do not use this function in an async context as it will busy-wait
+    /// internally.
+    pub fn write_dma_blocking<F, R, const N2: usize, const P: usize>(
         &mut self,
         data: &PreprocessedPixels<N2, L, P>,
         dma: &mut hal::dma::channel::Channel,
@@ -221,42 +288,12 @@ where
     where
         F: FnOnce() -> R,
     {
-        // Wait for the buffer to idle and clear timer overflow flag
-        while !self.shift_buffer_empty() {}
-        self.reset_idle_timer_finished_flag();
-
-        let result = {
-            // Write data
-            let data = data.get_dma_data();
-            let mut destination =
-                WS2812Dma::new(&mut self.flexio, Self::get_shifter_id(), dma_signal_id);
-            let write = core::pin::pin!(hal::dma::peripheral::write(dma, data, &mut destination));
-
-            let mut write = cassette::Cassette::new(write);
-            let mut active = write.poll_on().transpose()?.is_none();
-
-            // Execute function
-            let result = concurrent_action();
-
-            // Finish write
-            if active {
-                // Query once to find out if we potentially lagged
-                active = write.poll_on().transpose()?.is_none();
-            }
-            if active {
-                write.block_on()?;
-            }
-
-            WriteDmaResult {
-                result,
-                lagged: !active,
-            }
-        };
-
-        // Wait for transfer finished
-        while !self.shift_buffer_empty() {}
-        while !self.idle_timer_finished() {}
-
-        Ok(result)
+        cassette::Cassette::new(core::pin::pin!(self.write_dma(
+            data,
+            dma,
+            dma_signal_id,
+            async { concurrent_action() }
+        )))
+        .block_on()
     }
 }

@@ -34,9 +34,15 @@ cassette = "0.2.3"
 
 # Additional CI dependencies
 teensy4-bsp = { version = "0.4", optional = true }
+futures = { version = "0.3.29", default-features = false, features = [
+    "async-await",
+] }
 
 
 [dev-dependencies]
+
+rtic = { version = "2.0.1", features = ["thumbv7-backend"] }
+
 cortex-m = "0.7.7"
 embedded-hal = "0.2.7"
 
