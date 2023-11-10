@@ -113,7 +113,11 @@ mod app {
         log::debug!("Timer initialized.");
 
         // Initialize DMA
-        let neopixel_dma = dma[0].take().unwrap();
+        let mut neopixel_dma = dma[0].take().unwrap();
+        neopixel_dma.set_interrupt_on_completion(true);
+        unsafe {
+            cortex_m::peripheral::NVIC::unmask(imxrt_ral::interrupt::DMA0_DMA16);
+        }
 
         // Ws2812 driver
         log::info!("Initializing FlexIO ...");
@@ -140,6 +144,14 @@ mod app {
                 neopixel_dma,
             },
         )
+    }
+
+    #[task(binds = DMA0_DMA16)]
+    fn on_dma(_cx: on_dma::Context) {
+        unsafe {
+            imxrt_hal::dma::DMA.on_interrupt(0);
+            imxrt_hal::dma::DMA.on_interrupt(16);
+        }
     }
 
     #[task(local = [
