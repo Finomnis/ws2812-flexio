@@ -6,8 +6,9 @@ use imxrt_ral as ral;
 use ral::{flexio, Valid};
 
 use super::{
-    dma::WS2812Dma, flexio_configurator::FlexIOConfigurator, interleaved_pixels::InterleavedPixels,
-    PreprocessedPixels, WS2812Driver, WriteDmaResult,
+    dma::WS2812Dma, flexio_configurator::FlexIOConfigurator,
+    idle_timer_finished_watcher::IdleTimerFinishedWatcher, interleaved_pixels::InterleavedPixels,
+    maybe_own::MaybeOwn, InterruptHandler, PreprocessedPixels, WS2812Driver, WriteDmaResult,
 };
 use crate::{errors, pixelstream::PixelStreamRef, Pins};
 
@@ -127,9 +128,17 @@ where
 
         // Configure pins and create driver object
         pins.configure();
+
+        // Finish and create watcher
+        let flexio = flexio.finish();
+        let idle_timer_finished = MaybeOwn::new(InterruptHandler {
+            watcher: IdleTimerFinishedWatcher::new(&flexio, Self::get_idle_timer_id()),
+        });
+
         Ok(Self {
             _pins: pins,
-            flexio: flexio.finish(),
+            flexio,
+            idle_timer_finished,
         })
     }
 
@@ -161,14 +170,19 @@ where
         ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[buf_id], data);
     }
 
-    fn reset_idle_timer_finished_flag(&mut self) {
+    /// Take the interrupt handler callback from the driver.
+    ///
+    /// For the correct functionality of [`write_dma()`](WS2812Driver::write_dma) in
+    /// waker-based async runtimes (like RTIC 2), it is required to invoke the handler
+    /// function every time an interrupt of the given FlexIO peripheral happens.
+    pub fn take_interrupt_handler(
+        &mut self,
+        storage: &'static mut Option<InterruptHandler<N>>,
+    ) -> &'static InterruptHandler<N> {
         let mask = 1u32 << Self::get_idle_timer_id();
-        ral::write_reg!(ral::flexio, self.flexio, TIMSTAT, mask);
-    }
+        imxrt_ral::write_reg!(imxrt_ral::flexio, self.flexio, TIMIEN, mask);
 
-    fn idle_timer_finished(&mut self) -> bool {
-        let mask = 1u32 << Self::get_idle_timer_id();
-        (ral::read_reg!(ral::flexio, self.flexio, TIMSTAT) & mask) != 0
+        self.idle_timer_finished.to_static_ref(storage)
     }
 
     /// Writes pixels to an LED strip.
@@ -181,7 +195,7 @@ where
     pub fn write(&mut self, data: [&mut dyn PixelStreamRef; L]) {
         // Wait for the buffer to idle and clear timer overflow flag
         while !self.shift_buffer_empty() {}
-        self.reset_idle_timer_finished_flag();
+        self.idle_timer_finished.get().watcher.clear();
 
         // Write data
         for elem in InterleavedPixels::new(data) {
@@ -190,7 +204,7 @@ where
         }
 
         // Wait for transfer finished
-        while !self.idle_timer_finished() {}
+        while !self.idle_timer_finished.get().watcher.poll() {}
     }
 
     /// Writes pixels to an LED strip.
@@ -223,11 +237,13 @@ where
     where
         F: Future<Output = R>,
     {
-        // Wait for the buffer to idle and clear timer overflow flag
+        // Wait for the buffer to idle.
+        // In normal usage, waiting here shouldn't happen;
+        // this is just to make sure.
         while !self.shift_buffer_empty() {
             cassette::yield_now().await;
         }
-        self.reset_idle_timer_finished_flag();
+        self.idle_timer_finished.get().watcher.clear();
 
         let result = {
             // Write data
@@ -264,17 +280,12 @@ where
         };
 
         // Wait for transfer finished
-        while !self.shift_buffer_empty() {
-            cassette::yield_now().await;
-        }
-        while !self.idle_timer_finished() {
-            cassette::yield_now().await;
-        }
+        self.idle_timer_finished.get().watcher.finished().await;
 
         Ok(result)
     }
 
-    /// Same as [`write_dma()`](write_dma), but blocks until completion.
+    /// Same as [`write_dma()`](WS2812Driver::write_dma), but blocks until completion.
     ///
     /// Do not use this function in an async context as it will busy-wait
     /// internally.

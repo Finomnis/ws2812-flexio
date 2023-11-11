@@ -13,7 +13,7 @@ mod pixelstream;
 /// Possible errors that could happen.
 pub mod errors;
 
-pub use flexio::{PreprocessedPixels, WS2812Driver, WriteDmaResult};
+pub use flexio::{InterruptHandler, PreprocessedPixels, WS2812Driver, WriteDmaResult};
 pub use pins::Pins;
 pub use pixel::Pixel;
 pub use pixelstream::IntoPixelStream;

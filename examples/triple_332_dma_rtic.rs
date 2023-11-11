@@ -1,5 +1,8 @@
 // This example renders a moving rainbow on a 332 pixel long led strip using a Teensy MicroMod.
 //
+// With the help of `RTIC 2` the bus operation happens completely asynchronously.
+// Sadly, this requires some interrupts to be set up properly.
+//
 // Led Strip: https://www.ipixelleds.com/index.php?id=923
 // Teensy Micromod: https://www.sparkfun.com/products/16402
 //
@@ -71,9 +74,12 @@ mod app {
         us_timer: hal::gpt::Gpt1,
         neopixel: WS2812Driver<2, 3, (P6, P7, P8)>,
         neopixel_dma: hal::dma::channel::Channel,
+        neopixel_interrupt_handler: &'static ws2812_flexio::InterruptHandler<2>, // TODO: make reference internal
     }
 
-    #[init]
+    #[init(local = [
+        interrupt_handler: Option<ws2812_flexio::InterruptHandler<2>> = None
+    ])]
     fn init(cx: init::Context) -> (Shared, Local) {
         let board::Resources {
             mut gpio2,
@@ -129,7 +135,12 @@ mod app {
             FLEXIO2_CLK_PRED: FLEXIO2_CLK_PRED_4,
             FLEXIO2_CLK_PODF: DIVIDE_6,
         );
-        let neopixel = WS2812Driver::init(flexio2, (pins.p6, pins.p7, pins.p8)).unwrap();
+        let mut neopixel = WS2812Driver::init(flexio2, (pins.p6, pins.p7, pins.p8)).unwrap();
+        let neopixel_interrupt_handler =
+            neopixel.take_interrupt_handler(cx.local.interrupt_handler);
+        unsafe {
+            cortex_m::peripheral::NVIC::unmask(imxrt_ral::interrupt::FLEXIO2);
+        }
         log::debug!("FlexIO initialized.");
 
         // Spawn animation task
@@ -142,6 +153,7 @@ mod app {
                 us_timer,
                 neopixel,
                 neopixel_dma,
+                neopixel_interrupt_handler,
             },
         )
     }
@@ -152,6 +164,11 @@ mod app {
             imxrt_hal::dma::DMA.on_interrupt(0);
             imxrt_hal::dma::DMA.on_interrupt(16);
         }
+    }
+
+    #[task(binds = FLEXIO2, local = [neopixel_interrupt_handler])]
+    fn on_flexio2(cx: on_flexio2::Context) {
+        cx.local.neopixel_interrupt_handler.on_interrupt();
     }
 
     #[task(local = [
