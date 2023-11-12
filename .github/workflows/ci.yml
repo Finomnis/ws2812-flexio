@@ -128,6 +128,10 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2
 
