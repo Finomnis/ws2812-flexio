@@ -133,7 +133,7 @@ where
         // Finish and create watcher
         let flexio = flexio.finish();
         let inner = MaybeOwn::new(InterruptHandlerData {
-            watcher: IdleTimerFinishedWatcher::new(flexio, Self::get_idle_timer_id()),
+            finished_watcher: IdleTimerFinishedWatcher::new(flexio, Self::get_idle_timer_id()),
         });
 
         Ok(Self { _pins: pins, inner })
@@ -158,7 +158,7 @@ where
     }
 
     fn flexio(&self) -> &imxrt_ral::flexio::Instance<N> {
-        self.inner.get().watcher.flexio()
+        self.inner.get().finished_watcher.flexio()
     }
 
     fn shift_buffer_empty(&self) -> bool {
@@ -198,7 +198,7 @@ where
     pub fn write(&mut self, data: [&mut dyn PixelStreamRef; L]) {
         // Wait for the buffer to idle and clear timer overflow flag
         while !self.shift_buffer_empty() {}
-        self.inner.get().watcher.clear();
+        self.inner.get().finished_watcher.clear();
 
         // Write data
         for elem in InterleavedPixels::new(data) {
@@ -207,7 +207,7 @@ where
         }
 
         // Wait for transfer finished
-        while !self.inner.get().watcher.poll() {}
+        while !self.inner.get().finished_watcher.poll() {}
     }
 
     /// Writes pixels to an LED strip.
@@ -246,7 +246,7 @@ where
         while !self.shift_buffer_empty() {
             cassette::yield_now().await;
         }
-        self.inner.get().watcher.clear();
+        self.inner.get().finished_watcher.clear();
 
         let result = {
             // Write data
@@ -283,7 +283,7 @@ where
         };
 
         // Wait for transfer finished
-        self.inner.get().watcher.finished().await;
+        self.inner.get().finished_watcher.finished().await;
 
         Ok(result)
     }

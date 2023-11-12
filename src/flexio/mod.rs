@@ -37,7 +37,7 @@ pub struct WriteDmaResult<R> {
 
 /// TODO
 pub struct InterruptHandlerData<const N: u8> {
-    watcher: IdleTimerFinishedWatcher<N>,
+    finished_watcher: IdleTimerFinishedWatcher<N>,
 }
 
 /// TODO
