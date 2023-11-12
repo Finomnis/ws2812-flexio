@@ -184,7 +184,7 @@ where
         imxrt_ral::write_reg!(imxrt_ral::flexio, self.flexio(), TIMIEN, mask);
 
         InterruptHandler {
-            data: self.inner.to_static_ref(storage),
+            data: self.inner.convert_to_static_ref(storage),
         }
     }
 

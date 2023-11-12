@@ -22,7 +22,7 @@ impl<T: 'static> MaybeOwn<T> {
         }
     }
 
-    pub fn to_static_ref(&mut self, storage: &'static mut Option<T>) -> &'static T {
+    pub fn convert_to_static_ref(&mut self, storage: &'static mut Option<T>) -> &'static T {
         match &mut self.inner {
             MaybeOwnEnum::Owned(x) => {
                 let x = x.take().unwrap();
