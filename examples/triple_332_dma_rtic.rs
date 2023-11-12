@@ -1,7 +1,7 @@
 // This example renders a moving rainbow on a 332 pixel long led strip using a Teensy MicroMod.
 //
 // With the help of `RTIC 2` the bus operation happens completely asynchronously.
-// Sadly, this requires some interrupts to be set up properly.
+// Note that this requires some extra interrupts to be set up properly.
 //
 // Led Strip: https://www.ipixelleds.com/index.php?id=923
 // Teensy Micromod: https://www.sparkfun.com/products/16402
