@@ -10,7 +10,7 @@ on:
 name: CI
 
 jobs:
-  build_examples:
+  build:
     name: Build
     runs-on: ubuntu-latest
     env:
