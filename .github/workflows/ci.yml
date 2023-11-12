@@ -11,7 +11,7 @@ name: CI
 
 jobs:
   build_examples:
-    name: Build examples
+    name: Build
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: "-D warnings"
@@ -21,6 +21,23 @@ jobs:
 
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf
+
+      - name: Build
+        run: cargo +stable build --all-features
+
+  build_examples:
+    name: Build examples
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
         with:
           targets: thumbv7em-none-eabihf
 
@@ -36,8 +53,8 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v3
 
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
         with:
           targets: thumbv7em-none-eabihf
 
@@ -70,17 +87,17 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v3
 
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
           targets: thumbv7em-none-eabihf
 
       - name: Run cargo fmt
-        run: cargo +stable fmt --all -- --check
+        run: cargo fmt --all -- --check
 
       - name: Run cargo clippy
-        run: cargo +stable clippy --all-features --examples -- -D warnings
+        run: cargo clippy --all-features --examples -- -D warnings
 
   docs:
     name: Documentation
@@ -89,15 +106,15 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v3
 
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
         with:
           targets: thumbv7em-none-eabihf
 
       - name: Run cargo doc
         env:
           RUSTDOCFLAGS: "-Dwarnings"
-        run: cargo +stable doc --no-deps --examples
+        run: cargo doc --no-deps --examples
 
   release:
     name: Publish version
