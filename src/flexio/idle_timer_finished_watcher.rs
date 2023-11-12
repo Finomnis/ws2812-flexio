@@ -1,11 +1,11 @@
 use core::{
     cell::RefCell,
+    future::Future,
     pin::Pin,
     task::{Context, Poll, Waker},
 };
 
 use cortex_m::interrupt::{self, Mutex};
-use futures::Future;
 
 struct IdleTimerFinishedWatcherInner<const N: u8> {
     happened: bool,
