@@ -119,8 +119,8 @@ jobs:
       #- uses: Swatinem/rust-cache@v1
 
       - name: Check MSRV
-        run: cargo msrv --target=thumbv7em-none-eabihf --log-target=stdout
-        #run: cargo msrv verify --target=thumbv7em-none-eabihf --log-target=stdout
+        run: cargo msrv --target=thumbv7em-none-eabihf --log-target=stdout -- cargo check --all-features --target=thumbv7em-none-eabihf
+        #run: cargo msrv verify --target=thumbv7em-none-eabihf --log-target=stdout -- cargo check --all-features --target=thumbv7em-none-eabihf
 
   semver:
     name: Semantic Versioning
