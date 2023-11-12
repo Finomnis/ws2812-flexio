@@ -122,18 +122,19 @@ jobs:
         #run: cargo msrv --target=thumbv7em-none-eabihf --log-target=stdout -- cargo check --all-features --target=thumbv7em-none-eabihf
         run: cargo msrv verify --target=thumbv7em-none-eabihf --log-target=stdout -- cargo check --all-features --target=thumbv7em-none-eabihf
 
-  semver:
-    name: Semantic Versioning
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v3
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: thumbv7em-none-eabihf
-      - name: Check semver
-        uses: obi1kenobi/cargo-semver-checks-action@v2
+  # BLOCKED BY: https://github.com/obi1kenobi/cargo-semver-checks/issues/579
+  # semver:
+  #   name: Semantic Versioning
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v3
+  #     - name: Install stable toolchain
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         targets: thumbv7em-none-eabihf
+  #     - name: Check semver
+  #       uses: obi1kenobi/cargo-semver-checks-action@v2
 
   release:
     name: Publish version
