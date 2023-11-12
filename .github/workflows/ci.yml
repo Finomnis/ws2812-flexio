@@ -87,6 +87,12 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v3
 
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          targets: thumbv7em-none-eabihf
+
       - name: Install nightly toolchain
         uses: dtolnay/rust-toolchain@nightly
         with:
@@ -94,7 +100,7 @@ jobs:
           targets: thumbv7em-none-eabihf
 
       - name: Run cargo fmt
-        run: cargo fmt --all -- --check
+        run: cargo +stable fmt --all -- --check
 
       - name: Run cargo clippy
         run: cargo clippy --all-features --examples -- -D warnings
