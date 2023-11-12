@@ -40,10 +40,8 @@ futures = { version = "0.3.29", default-features = false, features = [
 ] }
 
 [dev-dependencies]
-
-rtic = { version = "2.0.1", features = ["thumbv7-backend"] }
-
 embedded-hal = "0.2.7"
+rtic = { version = "2.0.1", features = ["thumbv7-backend"] }
 
 # Board support package
 teensy4-bsp = { version = "0.4.3", features = ["rt"] }
