@@ -74,11 +74,11 @@ mod app {
         us_timer: hal::gpt::Gpt1,
         neopixel: WS2812Driver<2, 3, (P6, P7, P8)>,
         neopixel_dma: hal::dma::channel::Channel,
-        neopixel_interrupt_handler: &'static ws2812_flexio::InterruptHandler<2>, // TODO: make reference internal
+        neopixel_interrupt_handler: ws2812_flexio::InterruptHandler<2>,
     }
 
     #[init(local = [
-        interrupt_handler: Option<ws2812_flexio::InterruptHandler<2>> = None
+        ws2812_data: Option<ws2812_flexio::InterruptHandlerData<2>> = None
     ])]
     fn init(cx: init::Context) -> (Shared, Local) {
         let board::Resources {
@@ -136,8 +136,7 @@ mod app {
             FLEXIO2_CLK_PODF: DIVIDE_6,
         );
         let mut neopixel = WS2812Driver::init(flexio2, (pins.p6, pins.p7, pins.p8)).unwrap();
-        let neopixel_interrupt_handler =
-            neopixel.take_interrupt_handler(cx.local.interrupt_handler);
+        let neopixel_interrupt_handler = neopixel.take_interrupt_handler(cx.local.ws2812_data);
         unsafe {
             cortex_m::peripheral::NVIC::unmask(imxrt_ral::interrupt::FLEXIO2);
         }

@@ -8,7 +8,8 @@ use ral::{flexio, Valid};
 use super::{
     dma::WS2812Dma, flexio_configurator::FlexIOConfigurator,
     idle_timer_finished_watcher::IdleTimerFinishedWatcher, interleaved_pixels::InterleavedPixels,
-    maybe_own::MaybeOwn, InterruptHandler, PreprocessedPixels, WS2812Driver, WriteDmaResult,
+    maybe_own::MaybeOwn, InterruptHandler, InterruptHandlerData, PreprocessedPixels, WS2812Driver,
+    WriteDmaResult,
 };
 use crate::{errors, pixelstream::PixelStreamRef, Pins};
 
@@ -131,15 +132,11 @@ where
 
         // Finish and create watcher
         let flexio = flexio.finish();
-        let idle_timer_finished = MaybeOwn::new(InterruptHandler {
-            watcher: IdleTimerFinishedWatcher::new(&flexio, Self::get_idle_timer_id()),
+        let inner = MaybeOwn::new(InterruptHandlerData {
+            watcher: IdleTimerFinishedWatcher::new(flexio, Self::get_idle_timer_id()),
         });
 
-        Ok(Self {
-            _pins: pins,
-            flexio,
-            idle_timer_finished,
-        })
+        Ok(Self { _pins: pins, inner })
     }
 
     const fn get_shifter_id() -> u8 {
@@ -160,14 +157,18 @@ where
         2 * pin_pos + 3
     }
 
+    fn flexio(&self) -> &imxrt_ral::flexio::Instance<N> {
+        self.inner.get().watcher.flexio()
+    }
+
     fn shift_buffer_empty(&self) -> bool {
         let mask = 1u32 << Self::get_shifter_id();
-        (ral::read_reg!(ral::flexio, self.flexio, SHIFTSTAT) & mask) != 0
+        (ral::read_reg!(ral::flexio, self.flexio(), SHIFTSTAT) & mask) != 0
     }
 
     fn fill_shift_buffer(&self, data: u32) {
         let buf_id = usize::from(Self::get_shifter_id());
-        ral::write_reg!(ral::flexio, self.flexio, SHIFTBUFBIS[buf_id], data);
+        ral::write_reg!(ral::flexio, self.flexio(), SHIFTBUFBIS[buf_id], data);
     }
 
     /// Take the interrupt handler callback from the driver.
@@ -177,12 +178,14 @@ where
     /// function every time an interrupt of the given FlexIO peripheral happens.
     pub fn take_interrupt_handler(
         &mut self,
-        storage: &'static mut Option<InterruptHandler<N>>,
-    ) -> &'static InterruptHandler<N> {
+        storage: &'static mut Option<InterruptHandlerData<N>>,
+    ) -> InterruptHandler<N> {
         let mask = 1u32 << Self::get_idle_timer_id();
-        imxrt_ral::write_reg!(imxrt_ral::flexio, self.flexio, TIMIEN, mask);
+        imxrt_ral::write_reg!(imxrt_ral::flexio, self.flexio(), TIMIEN, mask);
 
-        self.idle_timer_finished.to_static_ref(storage)
+        InterruptHandler {
+            data: self.inner.to_static_ref(storage),
+        }
     }
 
     /// Writes pixels to an LED strip.
@@ -195,7 +198,7 @@ where
     pub fn write(&mut self, data: [&mut dyn PixelStreamRef; L]) {
         // Wait for the buffer to idle and clear timer overflow flag
         while !self.shift_buffer_empty() {}
-        self.idle_timer_finished.get().watcher.clear();
+        self.inner.get().watcher.clear();
 
         // Write data
         for elem in InterleavedPixels::new(data) {
@@ -204,7 +207,7 @@ where
         }
 
         // Wait for transfer finished
-        while !self.idle_timer_finished.get().watcher.poll() {}
+        while !self.inner.get().watcher.poll() {}
     }
 
     /// Writes pixels to an LED strip.
@@ -243,13 +246,13 @@ where
         while !self.shift_buffer_empty() {
             cassette::yield_now().await;
         }
-        self.idle_timer_finished.get().watcher.clear();
+        self.inner.get().watcher.clear();
 
         let result = {
             // Write data
             let data = data.get_dma_data();
             let mut destination =
-                WS2812Dma::new(&mut self.flexio, Self::get_shifter_id(), dma_signal_id);
+                WS2812Dma::new(self.flexio(), Self::get_shifter_id(), dma_signal_id);
             let mut write =
                 core::pin::pin!(hal::dma::peripheral::write(dma, data, &mut destination));
 
@@ -280,7 +283,7 @@ where
         };
 
         // Wait for transfer finished
-        self.idle_timer_finished.get().watcher.finished().await;
+        self.inner.get().watcher.finished().await;
 
         Ok(result)
     }

@@ -1,6 +1,5 @@
 use core::{
     cell::RefCell,
-    ops::Deref,
     pin::Pin,
     task::{Context, Poll, Waker},
 };
@@ -11,21 +10,21 @@ use futures::Future;
 struct IdleTimerFinishedWatcherInner<const N: u8> {
     happened: bool,
     waker: Option<Waker>,
-    flexio: imxrt_ral::flexio::Instance<N>,
 }
 
 pub(crate) struct IdleTimerFinishedWatcher<const N: u8> {
     inner: Mutex<RefCell<IdleTimerFinishedWatcherInner<N>>>,
     idle_timer_id: u8,
+    flexio: imxrt_ral::flexio::Instance<N>,
 }
 
 impl<const N: u8> IdleTimerFinishedWatcherInner<N> {
-    pub fn check_and_reset(&mut self, idle_timer_id: u8) {
+    pub fn check_and_reset(&mut self, idle_timer_id: u8, flexio: &imxrt_ral::flexio::Instance<N>) {
         let mask = 1u32 << idle_timer_id;
-        let flag_set = (imxrt_ral::read_reg!(imxrt_ral::flexio, self.flexio, TIMSTAT) & mask) != 0;
+        let flag_set = (imxrt_ral::read_reg!(imxrt_ral::flexio, flexio, TIMSTAT) & mask) != 0;
 
         if flag_set {
-            imxrt_ral::write_reg!(imxrt_ral::flexio, self.flexio, TIMSTAT, mask);
+            imxrt_ral::write_reg!(imxrt_ral::flexio, flexio, TIMSTAT, mask);
 
             self.happened = true;
             if let Some(waker) = self.waker.take() {
@@ -36,15 +35,19 @@ impl<const N: u8> IdleTimerFinishedWatcherInner<N> {
 }
 
 impl<const N: u8> IdleTimerFinishedWatcher<N> {
-    pub fn new(flexio: &imxrt_ral::flexio::Instance<N>, idle_timer_id: u8) -> Self {
+    pub fn new(flexio: imxrt_ral::flexio::Instance<N>, idle_timer_id: u8) -> Self {
         Self {
             inner: Mutex::new(RefCell::new(IdleTimerFinishedWatcherInner {
                 happened: false,
                 waker: None,
-                flexio: unsafe { imxrt_ral::flexio::Instance::<N>::new(flexio.deref()) },
             })),
             idle_timer_id,
+            flexio,
         }
+    }
+
+    pub fn flexio(&self) -> &imxrt_ral::flexio::Instance<N> {
+        &self.flexio
     }
 
     fn with_check_and_reset<R>(
@@ -54,7 +57,7 @@ impl<const N: u8> IdleTimerFinishedWatcher<N> {
         interrupt::free(|cs| {
             let inner = self.inner.borrow(cs);
             let mut inner = inner.borrow_mut();
-            inner.check_and_reset(self.idle_timer_id);
+            inner.check_and_reset(self.idle_timer_id, &self.flexio);
 
             f(&mut inner)
         })

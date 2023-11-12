@@ -22,9 +22,8 @@ pub struct WS2812Driver<const N: u8, const L: usize, PINS: Pins<N, L>>
 where
     flexio::Instance<N>: Valid,
 {
-    flexio: flexio::Instance<N>,
     _pins: PINS,
-    idle_timer_finished: MaybeOwn<InterruptHandler<N>>,
+    inner: MaybeOwn<InterruptHandlerData<N>>,
 }
 
 /// The result of [WS2812Driver::write_dma()][WS2812Driver::write_dma].
@@ -37,6 +36,11 @@ pub struct WriteDmaResult<R> {
 }
 
 /// TODO
-pub struct InterruptHandler<const N: u8> {
+pub struct InterruptHandlerData<const N: u8> {
     watcher: IdleTimerFinishedWatcher<N>,
+}
+
+/// TODO
+pub struct InterruptHandler<const N: u8> {
+    data: &'static InterruptHandlerData<N>,
 }
