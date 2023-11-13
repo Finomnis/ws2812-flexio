@@ -59,18 +59,19 @@ fn render_frame(
     ]);
 }
 
-#[rtic::app(device = teensy4_bsp, dispatchers = [LPSPI1])]
+#[rtic::app(device = teensy4_bsp, dispatchers = [LPSPI1, LPSPI2])]
 mod app {
     use bsp::pins::common::{P6, P7, P8};
 
     use super::*;
 
     #[shared]
-    struct Shared {}
+    struct Shared {
+        led: board::Led,
+    }
 
     #[local]
     struct Local {
-        led: board::Led,
         us_timer: hal::gpt::Gpt1,
         neopixel: WS2812Driver<2, 3, (P6, P7, P8)>,
         neopixel_dma: hal::dma::channel::Channel,
@@ -144,11 +145,11 @@ mod app {
 
         // Spawn animation task
         animate::spawn().unwrap();
+        clear_led::spawn().unwrap();
 
         (
-            Shared {},
+            Shared { led },
             Local {
-                led,
                 us_timer,
                 neopixel,
                 neopixel_dma,
@@ -157,7 +158,7 @@ mod app {
         )
     }
 
-    #[task(binds = DMA0_DMA16)]
+    #[task(priority = 10, binds = DMA0_DMA16)]
     fn on_dma(_cx: on_dma::Context) {
         unsafe {
             imxrt_hal::dma::DMA.on_interrupt(0);
@@ -165,13 +166,25 @@ mod app {
         }
     }
 
-    #[task(binds = FLEXIO2, local = [neopixel_interrupt_handler])]
+    #[task(priority = 10, binds = FLEXIO2, local = [neopixel_interrupt_handler])]
     fn on_flexio2(cx: on_flexio2::Context) {
         cx.local.neopixel_interrupt_handler.on_interrupt();
     }
 
-    #[task(local = [
-        led, us_timer, neopixel, neopixel_dma,
+    #[task(priority = 1, shared = [led])]
+    async fn clear_led(cx: clear_led::Context) {
+        let clear_led::SharedResources { mut led, .. } = cx.shared;
+
+        // Clear LED as fast as possible,
+        // to demonstrate that lower priority tasks can still run
+        // without influencing the stability of the ws2812 framerate
+        loop {
+            led.lock(|led| led.clear());
+        }
+    }
+
+    #[task(priority = 5, shared = [led], local = [
+         us_timer, neopixel, neopixel_dma,
         framebuffer_0: [Srgb; NUM_PIXELS] = [Srgb::new(0., 0., 0.); NUM_PIXELS],
         framebuffer_1: [Srgb; NUM_PIXELS] = [Srgb::new(0., 0., 0.); NUM_PIXELS],
         framebuffer_2: [[u8; 3]; NUM_PIXELS] = [[0; 3]; NUM_PIXELS],
@@ -181,8 +194,8 @@ mod app {
         ) = (PreprocessedPixels::new(), PreprocessedPixels::new())
     ])]
     async fn animate(cx: animate::Context) {
+        let animate::SharedResources { mut led, .. } = cx.shared;
         let animate::LocalResources {
-            led,
             us_timer,
             framebuffer_0,
             framebuffer_1,
@@ -213,6 +226,7 @@ mod app {
                 .write_dma(display_buffer, neopixel_dma, 1, async {
                     t += 1;
 
+                    led.lock(|led| led.set());
                     render_frame(
                         t,
                         framebuffer_0,
@@ -220,8 +234,6 @@ mod app {
                         framebuffer_2,
                         render_buffer,
                     );
-
-                    led.toggle();
 
                     if (t % 100) == 0 {
                         let t_now = time_us() as i32;
