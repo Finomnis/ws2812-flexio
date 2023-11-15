@@ -1,6 +1,6 @@
 [package]
 name = "ws2812-flexio"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Finomnis <finomnis@gmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -22,6 +22,7 @@ github_ci = ["teensy4-bsp"]
 [dependencies]
 imxrt-hal = "0.5.3"
 imxrt-ral = "0.5.1"
+cortex-m = "0.7.7"
 log = "0.4.19"
 paste = "1.0.12"
 snafu = { version = "0.7.4", default-features = false }
@@ -34,17 +35,16 @@ cassette = "0.2.3"
 
 # Additional CI dependencies
 teensy4-bsp = { version = "0.4", optional = true }
-
+futures = { version = "0.3.29", default-features = false, features = [
+    "async-await",
+] }
 
 [dev-dependencies]
-cortex-m = "0.7.7"
 embedded-hal = "0.2.7"
+rtic = { version = "2.0.1", features = ["thumbv7-backend"] }
 
 # Board support package
 teensy4-bsp = { version = "0.4.3", features = ["rt"] }
-
-# Logging
-critical-section = "1.1.1"
 
 # Packages necessary for board usage
 nb = "1.1.0"    # Async

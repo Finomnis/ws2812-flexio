@@ -140,7 +140,7 @@ fn main() -> ! {
         flip_buffers = !flip_buffers;
 
         let lagged = neopixel
-            .write_dma(display_buffer, &mut neopixel_dma, 1, || {
+            .write_dma_blocking(display_buffer, &mut neopixel_dma, 1, || {
                 t += 1;
 
                 render_frame(
