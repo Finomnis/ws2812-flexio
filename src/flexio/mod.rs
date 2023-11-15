@@ -35,12 +35,27 @@ pub struct WriteDmaResult<R> {
     pub lagged: bool,
 }
 
-/// TODO
+/// Static memory required by the [`WS2812Driver::take_interrupt_handler`] function.
+///
+/// For RTIC 2, it is recommended to have this allocated by the `#[init]` macro, like so:
+///
+/// ```rust
+/// #[init(local = [ws2812_data: Option<ws2812_flexio::InterruptHandlerData<2>> = None])]
+/// fn init(cx: init::Context) -> (Shared, Local) {
+///     // ...
+/// }
+/// ```
 pub struct InterruptHandlerData<const N: u8> {
     finished_watcher: IdleTimerFinishedWatcher<N>,
 }
 
-/// TODO
+/// An interrupt handler that signals to the driver
+/// that an interrupt happened.
+///
+/// For correct functionality of [`WS2812Driver::write_dma`] in
+/// waker-based async runtimes (like RTIC 2), it is required to invoke the
+/// [`InterruptHandler::on_interrupt`] function every time an interrupt
+/// of the associated FlexIO peripheral happens.
 pub struct InterruptHandler<const N: u8> {
     data: &'static InterruptHandlerData<N>,
 }

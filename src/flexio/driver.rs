@@ -173,9 +173,13 @@ where
 
     /// Take the interrupt handler callback from the driver.
     ///
-    /// For the correct functionality of [`write_dma()`](WS2812Driver::write_dma) in
-    /// waker-based async runtimes (like RTIC 2), it is required to invoke the handler
-    /// function every time an interrupt of the given FlexIO peripheral happens.
+    /// # Arguments
+    ///
+    /// * `storage` - Static memory required by the function to work. See [`InterruptHandlerData`] for more information.
+    ///
+    /// For correct functionality of [`write_dma()`](WS2812Driver::write_dma) in
+    /// waker-based async runtimes (like RTIC 2), it is required to invoke the returned
+    /// [`InterruptHandler`] every time an interrupt of the given FlexIO peripheral happens.
     pub fn take_interrupt_handler(
         &mut self,
         storage: &'static mut Option<InterruptHandlerData<N>>,
