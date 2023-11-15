@@ -287,6 +287,9 @@ where
         };
 
         // Wait for transfer finished
+        while !self.shift_buffer_empty() {
+            self.inner.get().finished_watcher.finished().await;
+        }
         self.inner.get().finished_watcher.finished().await;
 
         Ok(result)
