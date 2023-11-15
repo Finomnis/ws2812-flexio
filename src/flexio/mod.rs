@@ -40,7 +40,9 @@ pub struct WriteDmaResult<R> {
 /// For RTIC 2, it is recommended to have this allocated by the `#[init]` macro, like so:
 ///
 /// ```rust
-/// #[init(local = [ws2812_data: Option<ws2812_flexio::InterruptHandlerData<2>> = None])]
+/// #[init(local = [
+///     ws2812_data: Option<ws2812_flexio::InterruptHandlerData<2>> = None
+/// ])]
 /// fn init(cx: init::Context) -> (Shared, Local) {
 ///     // ...
 /// }
