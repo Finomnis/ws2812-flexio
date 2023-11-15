@@ -177,7 +177,7 @@ mod app {
 
         // Clear LED as fast as possible,
         // to demonstrate that lower priority tasks can still run
-        // without influencing the stability of the ws2812 framerate
+        // without influencing the stability of the WS2812 framerate
         loop {
             led.lock(|led| led.clear());
         }
