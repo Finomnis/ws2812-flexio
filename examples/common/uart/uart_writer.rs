@@ -1,4 +1,4 @@
-use core::{convert::Infallible, fmt::Write};
+use core::fmt::Write;
 
 struct Inner<W> {
     uart: W,
@@ -10,7 +10,7 @@ pub struct UartWriter<W> {
 
 impl<W> UartWriter<W>
 where
-    W: embedded_hal::serial::Write<u8, Error = Infallible>,
+    W: embedded_io::Write,
 {
     pub fn new(uart: W) -> Self {
         Self {
@@ -27,7 +27,7 @@ where
 
 impl<W> core::fmt::Write for Inner<W>
 where
-    W: embedded_hal::serial::Write<u8, Error = Infallible>,
+    W: embedded_io::Write,
 {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         assert!(s.is_ascii());
@@ -38,13 +38,12 @@ where
                     // Uart seems to usually be \r\n encoded.
                     // writeln!(), however, is always \n encoded,
                     // so convert here on the fly.
-                    nb::block!(self.uart.write(b'\r')).unwrap();
-                    nb::block!(self.uart.write(b'\n')).unwrap();
+                    self.uart.write_all(b"\r\n").unwrap()
                 }
-                _ => nb::block!(self.uart.write(b)).unwrap(),
+                _ => self.uart.write_all(core::slice::from_ref(&b)).unwrap(),
             }
         }
-        nb::block!(self.uart.flush()).unwrap();
+        self.uart.flush().unwrap();
         Ok(())
     }
 }

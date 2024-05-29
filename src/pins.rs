@@ -1,6 +1,4 @@
-use imxrt_hal as hal;
-
-use hal::iomuxc::{self, flexio::Pin};
+use imxrt_iomuxc::{self as iomuxc, flexio::Pin};
 
 use paste::paste;
 

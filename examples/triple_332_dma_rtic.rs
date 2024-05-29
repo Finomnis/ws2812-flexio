@@ -10,7 +10,6 @@
 
 #![no_std]
 #![no_main]
-#![feature(type_alias_impl_trait)] // Required for RTIC 2.0 right now
 
 use teensy4_bsp as bsp;
 

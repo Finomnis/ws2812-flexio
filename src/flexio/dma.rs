@@ -1,4 +1,3 @@
-use imxrt_hal::dma;
 use imxrt_ral::{flexio, write_reg};
 
 pub(crate) struct WS2812Dma<'a, const N: u8> {
@@ -17,7 +16,7 @@ impl<'a, const N: u8> WS2812Dma<'a, N> {
     }
 }
 
-unsafe impl<const N: u8> dma::peripheral::Destination<u32> for WS2812Dma<'_, N> {
+unsafe impl<const N: u8> imxrt_dma::peripheral::Destination<u32> for WS2812Dma<'_, N> {
     fn destination_signal(&self) -> u32 {
         self.dma_channel
     }
