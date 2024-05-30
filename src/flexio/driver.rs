@@ -1,6 +1,5 @@
 use core::{future::Future, task::Poll};
 
-use imxrt_hal as hal;
 use imxrt_ral as ral;
 
 use ral::{flexio, Valid};
@@ -237,10 +236,10 @@ where
     pub async fn write_dma<F, R, const N2: usize, const P: usize>(
         &mut self,
         data: &PreprocessedPixels<N2, L, P>,
-        dma: &mut hal::dma::channel::Channel,
+        dma: &mut imxrt_dma::channel::Channel,
         dma_signal_id: u32,
         concurrent_action: F,
-    ) -> Result<WriteDmaResult<R>, imxrt_hal::dma::Error>
+    ) -> Result<WriteDmaResult<R>, imxrt_dma::Error>
     where
         F: Future<Output = R>,
     {
@@ -258,7 +257,7 @@ where
             let mut destination =
                 WS2812Dma::new(self.flexio(), Self::get_shifter_id(), dma_signal_id);
             let mut write =
-                core::pin::pin!(hal::dma::peripheral::write(dma, data, &mut destination));
+                core::pin::pin!(imxrt_dma::peripheral::write(dma, data, &mut destination));
 
             let mut dma_finished = false;
             if let Poll::Ready(s) = futures::poll!(&mut write) {
@@ -302,10 +301,10 @@ where
     pub fn write_dma_blocking<F, R, const N2: usize, const P: usize>(
         &mut self,
         data: &PreprocessedPixels<N2, L, P>,
-        dma: &mut hal::dma::channel::Channel,
+        dma: &mut imxrt_dma::channel::Channel,
         dma_signal_id: u32,
         concurrent_action: F,
-    ) -> Result<WriteDmaResult<R>, imxrt_hal::dma::Error>
+    ) -> Result<WriteDmaResult<R>, imxrt_dma::Error>
     where
         F: FnOnce() -> R,
     {
