@@ -13,6 +13,11 @@ categories = ["embedded", "no-std"]
 
 exclude = ["/.gitignore", "/.github/", "/.vscode/"]
 
+[features]
+default = []
+
+# Do not use; internally required for Github CI
+_ci = ["imxrt-ral/imxrt1062"]
 
 [dependencies]
 # Hardware
@@ -49,6 +54,5 @@ teensy4-bsp = { version = "0.5.0", features = ["rt"] }
 # Allow docsrs options
 [package.metadata.docs.rs]
 default-target = "thumbv7em-none-eabihf"
-features = ["imxrt-ral/imxrt1062"]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
