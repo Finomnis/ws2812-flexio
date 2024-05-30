@@ -120,11 +120,15 @@ fn main() -> ! {
     let mut neopixel = WS2812Driver::init(flexio2, (pins.p6, pins.p7, pins.p8)).unwrap();
     log::debug!("FlexIO initialized.");
 
-    let framebuffer_0 = unsafe { &mut FRAMEBUFFER_0 };
-    let framebuffer_1 = unsafe { &mut FRAMEBUFFER_1 };
-    let framebuffer_2 = unsafe { &mut FRAMEBUFFER_2 };
-
-    let buffers = unsafe { &mut BUFFERS };
+    #[allow(clippy::deref_addrof)]
+    let (framebuffer_0, framebuffer_1, framebuffer_2, buffers) = unsafe {
+        (
+            &mut *(core::ptr::addr_of_mut!(FRAMEBUFFER_0)),
+            &mut *(core::ptr::addr_of_mut!(FRAMEBUFFER_1)),
+            &mut *(core::ptr::addr_of_mut!(FRAMEBUFFER_2)),
+            &mut *(core::ptr::addr_of_mut!(BUFFERS)),
+        )
+    };
     let mut flip_buffers = false;
 
     let mut t = 0;
@@ -140,7 +144,7 @@ fn main() -> ! {
         flip_buffers = !flip_buffers;
 
         let lagged = neopixel
-            .write_dma(display_buffer, &mut neopixel_dma, 1, || {
+            .write_dma_blocking(display_buffer, &mut neopixel_dma, 1, || {
                 t += 1;
 
                 render_frame(

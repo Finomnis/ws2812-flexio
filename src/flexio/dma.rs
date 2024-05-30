@@ -1,14 +1,13 @@
-use imxrt_hal::dma;
 use imxrt_ral::{flexio, write_reg};
 
 pub(crate) struct WS2812Dma<'a, const N: u8> {
-    flexio: &'a mut flexio::Instance<N>,
+    flexio: &'a flexio::Instance<N>,
     shifter_id: u8,
     dma_channel: u32,
 }
 
 impl<'a, const N: u8> WS2812Dma<'a, N> {
-    pub fn new(flexio: &'a mut flexio::Instance<N>, shifter_id: u8, dma_channel: u32) -> Self {
+    pub fn new(flexio: &'a flexio::Instance<N>, shifter_id: u8, dma_channel: u32) -> Self {
         Self {
             flexio,
             shifter_id,
@@ -17,7 +16,7 @@ impl<'a, const N: u8> WS2812Dma<'a, N> {
     }
 }
 
-unsafe impl<const N: u8> dma::peripheral::Destination<u32> for WS2812Dma<'_, N> {
+unsafe impl<const N: u8> imxrt_dma::peripheral::Destination<u32> for WS2812Dma<'_, N> {
     fn destination_signal(&self) -> u32 {
         self.dma_channel
     }
