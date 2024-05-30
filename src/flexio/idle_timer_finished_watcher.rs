@@ -5,7 +5,7 @@ use core::{
     task::{Context, Poll, Waker},
 };
 
-use cortex_m::interrupt::{self, Mutex};
+use critical_section::Mutex;
 
 struct IdleTimerFinishedWatcherInner<const N: u8> {
     happened: bool,
@@ -54,7 +54,7 @@ impl<const N: u8> IdleTimerFinishedWatcher<N> {
         &self,
         f: impl FnOnce(&mut IdleTimerFinishedWatcherInner<N>) -> R,
     ) -> R {
-        interrupt::free(|cs| {
+        critical_section::with(|cs| {
             let inner = self.inner.borrow(cs);
             let mut inner = inner.borrow_mut();
             inner.check_and_reset(self.idle_timer_id, &self.flexio);
