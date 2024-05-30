@@ -17,7 +17,7 @@ jobs:
       RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -34,7 +34,7 @@ jobs:
       RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install nightly toolchain
         uses: dtolnay/rust-toolchain@nightly
@@ -51,7 +51,7 @@ jobs:
       RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install nightly toolchain
         uses: dtolnay/rust-toolchain@nightly
@@ -69,7 +69,7 @@ jobs:
       RUST_BACKTRACE: 1
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install nightly toolchain
         uses: dtolnay/rust-toolchain@nightly
@@ -129,7 +129,7 @@ jobs:
       RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install cargo-binstall
         uses: taiki-e/install-action@v2
@@ -145,13 +145,15 @@ jobs:
         #run: cargo msrv --target=thumbv7em-none-eabihf --log-target=stdout -- cargo check --all-features --target=thumbv7em-none-eabihf
         run: cargo msrv verify --target=thumbv7em-none-eabihf --log-target=stdout -- cargo check --all-features --target=thumbv7em-none-eabihf
 
-  # BLOCKED BY: https://github.com/obi1kenobi/cargo-semver-checks/issues/579
   semver:
     name: Semantic Versioning
     runs-on: ubuntu-latest
+    env:
+      # No idea why this fixes the check.
+      RUSTFLAGS: "--cap-lints=warn"
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -167,7 +169,7 @@ jobs:
     needs: [build_examples, build_examples_release, tests, lints, docs, msrv] #TODO: , semver]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
