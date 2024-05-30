@@ -9,12 +9,14 @@ on:
 
 name: CI
 
+env:
+  RUSTFLAGS: "-D warnings"
+  RUST_BACKTRACE: 1
+
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -25,13 +27,11 @@ jobs:
           targets: thumbv7em-none-eabihf
 
       - name: Build
-        run: cargo +stable build --all-features
+        run: cargo +stable build --all-features --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062"
 
   build_examples:
     name: Build examples
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -42,13 +42,11 @@ jobs:
           targets: thumbv7em-none-eabihf
 
       - name: Build
-        run: cargo build --all-features --examples
+        run: cargo build --examples
 
   build_examples_release:
     name: Build examples (release)
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -59,14 +57,11 @@ jobs:
           targets: thumbv7em-none-eabihf
 
       - name: Build
-        run: cargo build --all-features --examples --release
+        run: cargo build --examples --release
 
   tests:
     name: Run tests (x86_64)
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
-      RUST_BACKTRACE: 1
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -78,7 +73,7 @@ jobs:
         run: sed -i '/harness = false/c\#harness = false' Cargo.toml
 
       - name: Run tests
-        run: cargo +stable test --lib --all-features --target=x86_64-unknown-linux-gnu
+        run: cargo +stable test --lib --all-features --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062" --target=x86_64-unknown-linux-gnu
 
   lints:
     name: Lints
@@ -103,7 +98,7 @@ jobs:
         run: cargo +stable fmt --all -- --check
 
       - name: Run cargo clippy
-        run: cargo clippy --all-features --examples -- -D warnings
+        run: cargo clippy --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062" --examples --lib --bins -- -D warnings
 
   docs:
     name: Documentation
@@ -125,8 +120,6 @@ jobs:
   msrv:
     name: Minimum Supported Rust Version
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -196,4 +189,4 @@ jobs:
         run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
 
       - name: Cargo publish
-        run: cargo publish --all-features
+        run: cargo publish --all-features --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062"

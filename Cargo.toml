@@ -13,12 +13,6 @@ categories = ["embedded", "no-std"]
 
 exclude = ["/.gitignore", "/.github/", "/.vscode/"]
 
-[features]
-default = []
-
-# Do not use; internally required for Github CI
-github_ci = ["teensy4-bsp"]
-
 
 [dependencies]
 # Hardware
@@ -41,9 +35,6 @@ futures = { version = "0.3.29", default-features = false, features = [
     "async-await",
 ] }
 
-# Additional CI dependencies
-teensy4-bsp = { version = "0.5", optional = true }
-
 
 [dev-dependencies]
 cortex-m = "0.7.7"
@@ -57,5 +48,7 @@ imxrt-hal = "0.5.5"
 
 # Allow docsrs options
 [package.metadata.docs.rs]
+default-target = "thumbv7em-none-eabihf"
+features = ["imxrt-hal/imxrt1060", "imxrt-ral/imxrt1062"]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
