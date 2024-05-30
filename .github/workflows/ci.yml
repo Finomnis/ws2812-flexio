@@ -142,8 +142,8 @@ jobs:
       #- uses: Swatinem/rust-cache@v1
 
       - name: Check MSRV
-        #run: cargo msrv --target=thumbv7em-none-eabihf --log-target=stdout -- cargo check --all-features --target=thumbv7em-none-eabihf
-        run: cargo msrv verify --target=thumbv7em-none-eabihf --log-target=stdout -- cargo check --all-features --target=thumbv7em-none-eabihf
+        #run: cargo msrv --target=thumbv7em-none-eabihf --log-target=stdout --all-features --target=thumbv7em-none-eabihf
+        run: cargo msrv verify --target=thumbv7em-none-eabihf --log-target=stdout --all-features
 
   semver:
     name: Semantic Versioning
@@ -166,7 +166,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     if: github.event_name == 'release'
-    needs: [build_examples, build_examples_release, tests, lints, docs, msrv] #TODO: , semver]
+    needs: [build_examples, build_examples_release, tests, lints, docs, msrv, semver]
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
