@@ -44,11 +44,11 @@ rtic = { version = "2.1.1", features = ["thumbv7-backend"] }
 
 # Board support package
 teensy4-bsp = { version = "0.5.0", features = ["rt"] }
-imxrt-hal = "0.5.5"
+#imxrt-hal = "0.5.5"
 
 # Allow docsrs options
 [package.metadata.docs.rs]
 default-target = "thumbv7em-none-eabihf"
-features = ["imxrt-hal/imxrt1060", "imxrt-ral/imxrt1062"]
+features = ["imxrt-ral/imxrt1062"]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

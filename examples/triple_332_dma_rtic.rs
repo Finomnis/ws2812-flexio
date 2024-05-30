@@ -122,7 +122,7 @@ mod app {
         let mut neopixel_dma = dma[0].take().unwrap();
         neopixel_dma.set_interrupt_on_completion(true);
         unsafe {
-            cortex_m::peripheral::NVIC::unmask(imxrt_ral::interrupt::DMA0_DMA16);
+            cortex_m::peripheral::NVIC::unmask(ral::interrupt::DMA0_DMA16);
         }
 
         // Ws2812 driver
@@ -138,7 +138,7 @@ mod app {
         let mut neopixel = WS2812Driver::init(flexio2, (pins.p6, pins.p7, pins.p8)).unwrap();
         let neopixel_interrupt_handler = neopixel.take_interrupt_handler(cx.local.ws2812_data);
         unsafe {
-            cortex_m::peripheral::NVIC::unmask(imxrt_ral::interrupt::FLEXIO2);
+            cortex_m::peripheral::NVIC::unmask(ral::interrupt::FLEXIO2);
         }
         log::debug!("FlexIO initialized.");
 
@@ -160,8 +160,8 @@ mod app {
     #[task(priority = 10, binds = DMA0_DMA16)]
     fn on_dma(_cx: on_dma::Context) {
         unsafe {
-            imxrt_hal::dma::DMA.on_interrupt(0);
-            imxrt_hal::dma::DMA.on_interrupt(16);
+            hal::dma::DMA.on_interrupt(0);
+            hal::dma::DMA.on_interrupt(16);
         }
     }
 

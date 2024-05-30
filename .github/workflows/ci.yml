@@ -27,7 +27,7 @@ jobs:
           targets: thumbv7em-none-eabihf
 
       - name: Build
-        run: cargo +stable build --all-features --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062"
+        run: cargo +stable build --all-features --features "imxrt-ral/imxrt1062"
 
   build_examples:
     name: Build examples
@@ -73,7 +73,7 @@ jobs:
         run: sed -i '/harness = false/c\#harness = false' Cargo.toml
 
       - name: Run tests
-        run: cargo +stable test --lib --all-features --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062" --target=x86_64-unknown-linux-gnu
+        run: cargo +stable test --lib --all-features --features "imxrt-ral/imxrt1062" --target=x86_64-unknown-linux-gnu
 
   lints:
     name: Lints
@@ -98,7 +98,7 @@ jobs:
         run: cargo +stable fmt --all -- --check
 
       - name: Run cargo clippy
-        run: cargo clippy --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062" --examples --lib --bins -- -D warnings
+        run: cargo clippy --features "imxrt-ral/imxrt1062" --examples --lib --bins -- -D warnings
 
   docs:
     name: Documentation
@@ -135,9 +135,9 @@ jobs:
       #- uses: Swatinem/rust-cache@v1
 
       - name: Check MSRV
-        #run: cargo msrv --log-target=stdout --log-level debug --output-format json --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062" --target=thumbv7em-none-eabihf
-        #run: cargo msrv --log-target=stdout --log-level debug --output-format json --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062" --target=thumbv7em-none-eabihf verify
-        run: cargo msrv --output-format json --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062" --target=thumbv7em-none-eabihf verify
+        #run: cargo msrv --log-target=stdout --log-level debug --output-format json --features "imxrt-ral/imxrt1062" --target=thumbv7em-none-eabihf
+        #run: cargo msrv --log-target=stdout --log-level debug --output-format json --features "imxrt-ral/imxrt1062" --target=thumbv7em-none-eabihf verify
+        run: cargo msrv --output-format json --features "imxrt-ral/imxrt1062" --target=thumbv7em-none-eabihf verify
 
   semver:
     name: Semantic Versioning
@@ -189,4 +189,4 @@ jobs:
         run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
 
       - name: Cargo publish
-        run: cargo publish --all-features --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062"
+        run: cargo publish --all-features --features "imxrt-ral/imxrt1062"
