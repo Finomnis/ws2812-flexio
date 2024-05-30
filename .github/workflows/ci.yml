@@ -42,7 +42,7 @@ jobs:
           targets: thumbv7em-none-eabihf
 
       - name: Build
-        run: cargo build --examples
+        run: cargo build --all-features --examples
 
   build_examples_release:
     name: Build examples (release)
@@ -57,7 +57,7 @@ jobs:
           targets: thumbv7em-none-eabihf
 
       - name: Build
-        run: cargo build --examples --release
+        run: cargo build --all-features --examples --release
 
   tests:
     name: Run tests (x86_64)
@@ -115,7 +115,7 @@ jobs:
       - name: Run cargo doc
         env:
           RUSTDOCFLAGS: "-Dwarnings"
-        run: cargo doc --no-deps --examples
+        run: cargo doc --no-deps --all-features
 
   msrv:
     name: Minimum Supported Rust Version
