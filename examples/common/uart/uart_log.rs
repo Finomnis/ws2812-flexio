@@ -3,7 +3,7 @@ use core::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
-use cortex_m::interrupt::{self, Mutex};
+use critical_section::Mutex;
 use log::{LevelFilter, Log};
 use teensy4_bsp::board::Lpuart6;
 
@@ -19,7 +19,7 @@ pub fn init(uart: UartWriter<Lpuart6>, max_level: LevelFilter) {
         let logger = unsafe { LOGGER.insert(UartLogger::new(uart)) };
 
         if let Err(e) = log::set_logger(logger) {
-            interrupt::free(|cs| {
+            critical_section::with(|cs| {
                 writeln!(
                     logger.uart.borrow(cs).borrow_mut(),
                     "Unable to set logger: {}",
@@ -50,7 +50,7 @@ impl Log for UartLogger {
     }
 
     fn log(&self, record: &log::Record) {
-        interrupt::free(|cs| {
+        critical_section::with(|cs| {
             let mut uart = self.uart.borrow(cs).borrow_mut();
             let color = match record.level() {
                 log::Level::Error => "31",
