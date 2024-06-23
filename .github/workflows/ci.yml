@@ -136,8 +136,8 @@ jobs:
 
       - name: Check with minimal versions
         # To find out the current MSRV, remove the `rust-version` entry from `Cargo.toml` and run:
-        run: cargo minimal-versions msrv --output-format json --all-features --target=thumbv7em-none-eabihf --log-target=stdout --log-level debug
-        #run: cargo minimal-versions msrv --output-format json --all-features --target thumbv7em-none-eabihf verify
+        # run: cargo minimal-versions msrv --output-format json --all-features --target=thumbv7em-none-eabihf --log-target=stdout --log-level debug
+        run: cargo minimal-versions msrv --output-format json --all-features --target thumbv7em-none-eabihf verify
 
   semver:
     name: Semantic Versioning
