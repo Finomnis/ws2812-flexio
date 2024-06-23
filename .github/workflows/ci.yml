@@ -144,12 +144,16 @@ jobs:
   # To find out the current MSRV, remove the `rust-version` entry from `Cargo.toml` and run:
   # cargo minimal-versions msrv --target=thumbv7em-none-eabihf --all-features
   msrv-and-min-versions:
+    name: Minimum Supported Rust Version, based on min dependency versions
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Install nightly toolchain
         uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install dependencies
+        uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack, cargo-minimal-versions, cargo-binstall
 
