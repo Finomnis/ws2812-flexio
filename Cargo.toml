@@ -17,32 +17,28 @@ exclude = ["/.gitignore", "/.github/", "/.vscode/"]
 default = []
 
 # Do not use; internally required for Github CI
-github_ci = ["teensy4-bsp"]
-
+_ci = ["imxrt-ral/imxrt1062"]
 
 [dependencies]
 # Hardware
 imxrt-dma = "0.1.1"
-imxrt-iomuxc = "0.2.6"
-imxrt-ral = "0.5.1"
+imxrt-iomuxc = "0.2.7"
+imxrt-ral = "0.5.3"
 
 # Common
-log = "0.4.19"
+log = "0.4.21"
 critical-section = "1.1.2"
-paste = "1.0.12"
+paste = "1.0.15"
 snafu = { version = "0.8.3", default-features = false }
 
 # Pixel types
-palette = { version = "0.7.2", default-features = false, features = ["libm"] }
+palette = { version = "0.7.6", default-features = false, features = ["libm"] }
 
 # Async reactor, for executing DMA actions
 cassette = "0.3.0"
-futures = { version = "0.3.29", default-features = false, features = [
+futures = { version = "0.3.30", default-features = false, features = [
     "async-await",
 ] }
-
-# Additional CI dependencies
-teensy4-bsp = { version = "0.5", optional = true }
 
 
 [dev-dependencies]
@@ -53,9 +49,10 @@ rtic = { version = "2.1.1", features = ["thumbv7-backend"] }
 
 # Board support package
 teensy4-bsp = { version = "0.5.0", features = ["rt"] }
-imxrt-hal = "0.5.5"
+#imxrt-hal = "0.5.5"
 
 # Allow docsrs options
 [package.metadata.docs.rs]
+default-target = "thumbv7em-none-eabihf"
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

@@ -9,12 +9,14 @@ on:
 
 name: CI
 
+env:
+  RUSTFLAGS: "-D warnings"
+  RUST_BACKTRACE: 1
+
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -30,8 +32,6 @@ jobs:
   build_examples:
     name: Build examples
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -47,8 +47,6 @@ jobs:
   build_examples_release:
     name: Build examples (release)
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -64,9 +62,6 @@ jobs:
   tests:
     name: Run tests (x86_64)
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
-      RUST_BACKTRACE: 1
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -103,7 +98,7 @@ jobs:
         run: cargo +stable fmt --all -- --check
 
       - name: Run cargo clippy
-        run: cargo clippy --all-features --examples -- -D warnings
+        run: cargo clippy --all-features --examples --lib --bins -- -D warnings
 
   docs:
     name: Documentation
@@ -120,13 +115,11 @@ jobs:
       - name: Run cargo doc
         env:
           RUSTDOCFLAGS: "-Dwarnings"
-        run: cargo doc --no-deps --examples
+        run: cargo doc --no-deps --all-features
 
   msrv:
     name: Minimum Supported Rust Version
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-D warnings"
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -142,9 +135,9 @@ jobs:
       #- uses: Swatinem/rust-cache@v1
 
       - name: Check MSRV
-        #run: cargo msrv --log-target=stdout --log-level debug --output-format json --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062" --target=thumbv7em-none-eabihf
-        #run: cargo msrv --log-target=stdout --log-level debug --output-format json --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062" --target=thumbv7em-none-eabihf verify
-        run: cargo msrv --output-format json --features "imxrt-hal/imxrt1060,imxrt-ral/imxrt1062" --target=thumbv7em-none-eabihf verify
+        #run: cargo msrv --log-target=stdout --log-level debug --output-format json --all-features --target=thumbv7em-none-eabihf
+        #run: cargo msrv --log-target=stdout --log-level debug --output-format json --all-features --target=thumbv7em-none-eabihf verify
+        run: cargo msrv --output-format json --all-features --target=thumbv7em-none-eabihf verify
 
   semver:
     name: Semantic Versioning
@@ -161,6 +154,8 @@ jobs:
           targets: thumbv7em-none-eabihf
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          feature-group: "all-features"
 
   release:
     name: Publish version
