@@ -154,6 +154,8 @@ jobs:
           targets: thumbv7em-none-eabihf
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          feature-group: "all-features"
 
   release:
     name: Publish version
