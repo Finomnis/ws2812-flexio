@@ -118,26 +118,26 @@ jobs:
         run: cargo doc --no-deps --all-features
 
   msrv:
-    name: Minimum Supported Rust Version
+    name: Minimum Supported Rust Version, based on min dependency versions
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install cargo-binstall
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install dependencies
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-binstall
+          tool: cargo-hack, cargo-minimal-versions, cargo-binstall
 
       - name: Install cargo-msrv
-        run: cargo binstall --version 0.16.0-beta.20 --no-confirm cargo-msrv
+        run: cargo binstall --version 0.16.0-beta.22 --no-confirm cargo-msrv
 
-      #- uses: Swatinem/rust-cache@v1
-
-      - name: Check MSRV
-        #run: cargo msrv --log-target=stdout --log-level debug --output-format json --all-features --target=thumbv7em-none-eabihf
-        #run: cargo msrv --log-target=stdout --log-level debug --output-format json --all-features --target=thumbv7em-none-eabihf verify
-        run: cargo msrv --output-format json --all-features --target=thumbv7em-none-eabihf verify
+      - name: Check with minimal versions
+        # To find out the current MSRV, remove the `rust-version` entry from `Cargo.toml` and run:
+        # run: cargo minimal-versions msrv --output-format json --all-features --target=thumbv7em-none-eabihf --log-target=stdout --log-level debug
+        run: cargo minimal-versions msrv --output-format json --all-features --target thumbv7em-none-eabihf verify
 
   semver:
     name: Semantic Versioning
