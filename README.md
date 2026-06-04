@@ -34,7 +34,7 @@ This crate can operate either in blocking mode or in DMA driven asynchronous mod
   fps = 100,000 / ((num_pixels + 1) x bytes_per_pixel + 30)
   ```
 
-  Example: For a strip with [332 SK6805 pixels](https://www.ipixelleds.com/index.php?id=923), we can achieve `100,000 / ((332 + 1) * 3 + 30) = 97.18` fps.
+  Example: For a strip with [332 SK6805 pixels](https://www.ipixelleds.com/more.php?id=22), we can achieve `100,000 / ((332 + 1) * 3 + 30) = 97.18` fps.
 
   Be aware that this framerate is only realistic for DMA based writes; with blocking writes, additional time gets lost while the next frame gets computed.
 
